@@ -1,0 +1,162 @@
+{
+  "reviewDate": "2026-10-20",
+  "documentation": "https://open.law.go.kr/LSO/lab/hangulAddr.do",
+  "before": [
+    {
+      "id": "api-law-001586-20260929-20261002",
+      "error": "URLError"
+    },
+    {
+      "id": "api-law-001565-20251223-20260101",
+      "status": 200,
+      "pageTitle": "<title>국가법령정보센터 | 오류페이지</title>",
+      "errorPage": true,
+      "bodyChars": 934
+    },
+    {
+      "id": "api-law-001563-20251223-20260101",
+      "status": 200,
+      "pageTitle": "<title>국가법령정보센터 | 오류페이지</title>",
+      "errorPage": true,
+      "bodyChars": 934
+    },
+    {
+      "id": "api-law-001571-20251001-20260102",
+      "status": 200,
+      "pageTitle": "<title>국가법령정보센터 | 오류페이지</title>",
+      "errorPage": true,
+      "bodyChars": 934
+    },
+    {
+      "id": "api-law-001561-20251001-20251001",
+      "status": 200,
+      "pageTitle": "<title>국가법령정보센터 | 오류페이지</title>",
+      "errorPage": true,
+      "bodyChars": 934
+    },
+    {
+      "id": "api-law-001584-20260317-20260918",
+      "status": 200,
+      "pageTitle": "<title>국가법령정보센터 | 오류페이지</title>",
+      "errorPage": true,
+      "bodyChars": 934
+    },
+    {
+      "id": "api-law-001590-20260804-20261002",
+      "error": "URLError"
+    },
+    {
+      "id": "api-law-005367-20260804-20260811",
+      "error": "URLError"
+    }
+  ],
+  "after": [
+    {
+      "id": "api-law-001586-20260929-20261002",
+      "sourceUrl": "https://www.law.go.kr/법령/국세기본법/(20261002,21987,20260929)",
+      "status": 200,
+      "resolved": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EA%B5%AD%EC%84%B8%EA%B8%B0%EB%B3%B8%EB%B2%95/(20261002,21987,20260929)",
+      "iframes": [
+        "/LSW//lsInfoP.do?lsiSeq=289999&amp;chrClsCd=010202&amp;urlMode=lsInfoP&amp;efYd=20261002&amp;ancYnChk=0"
+      ],
+      "title": [
+        "국세기본법"
+      ],
+      "error": false
+    },
+    {
+      "id": "api-law-001565-20251223-20260101",
+      "sourceUrl": "https://www.law.go.kr/법령/소득세법/(20260101,21221,20251223)",
+      "error": null,
+      "status": 200,
+      "title": [
+        "소득세법"
+      ],
+      "errorPage": false,
+      "iframes": [
+        "/LSW//lsInfoP.do?lsiSeq=280405&amp;chrClsCd=010202&amp;urlMode=lsInfoP&amp;efYd=20260101&amp;ancYnChk=0"
+      ]
+    },
+    {
+      "id": "api-law-001563-20251223-20260101",
+      "sourceUrl": "https://www.law.go.kr/법령/법인세법/(20260101,21217,20251223)",
+      "status": 200,
+      "resolved": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EB%B2%95%EC%9D%B8%EC%84%B8%EB%B2%95/(20260101,21217,20251223)",
+      "iframes": [
+        "/LSW//lsInfoP.do?lsiSeq=280349&amp;chrClsCd=010202&amp;urlMode=lsInfoP&amp;efYd=20260101&amp;ancYnChk=0"
+      ],
+      "title": [
+        "법인세법"
+      ],
+      "error": false
+    },
+    {
+      "id": "api-law-001571-20251001-20260102",
+      "sourceUrl": "https://www.law.go.kr/LSW/lsInfoP.do?lsiSeq=276117&chrClsCd=010202&urlMode=lsInfoP&efYd=20260102&ancYnChk=0",
+      "error": null,
+      "status": 200,
+      "errorPage": false,
+      "title": [
+        "법령 > 본문 > 부가가치세법 | 국가법령정보센터"
+      ],
+      "versionMetadataVerified": [
+        "20260102",
+        "21065"
+      ],
+      "previousShortAddressResult": "HTTP 502"
+    },
+    {
+      "id": "api-law-001561-20251001-20251001",
+      "sourceUrl": "https://www.law.go.kr/법령/상속세및증여세법/(20251001,21065,20251001)",
+      "status": 200,
+      "resolved": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EC%83%81%EC%86%8D%EC%84%B8%EB%B0%8F%EC%A6%9D%EC%97%AC%EC%84%B8%EB%B2%95/(20251001,21065,20251001)",
+      "iframes": [
+        "/LSW//lsInfoP.do?lsiSeq=276123&amp;chrClsCd=010202&amp;urlMode=lsInfoP&amp;efYd=20251001&amp;ancYnChk=0"
+      ],
+      "title": [
+        "상속세및증여세법"
+      ],
+      "error": false
+    },
+    {
+      "id": "api-law-001584-20260317-20260918",
+      "sourceUrl": "https://www.law.go.kr/법령/조세특례제한법/(20260918,21467,20260317)",
+      "error": null,
+      "status": 200,
+      "title": [
+        "조세특례제한법"
+      ],
+      "errorPage": false,
+      "iframes": [
+        "/LSW//lsInfoP.do?lsiSeq=284389&amp;chrClsCd=010202&amp;urlMode=lsInfoP&amp;efYd=20260918&amp;ancYnChk=0"
+      ]
+    },
+    {
+      "id": "api-law-001590-20260804-20261002",
+      "sourceUrl": "https://www.law.go.kr/법령/하도급거래공정화에관한법률/(20261002,21857,20260804)",
+      "error": null,
+      "status": 200,
+      "title": [
+        "하도급거래공정화에관한법률"
+      ],
+      "errorPage": false,
+      "iframes": [
+        "/LSW//lsInfoP.do?lsiSeq=288625&amp;chrClsCd=010202&amp;urlMode=lsInfoP&amp;efYd=20261002&amp;ancYnChk=0"
+      ]
+    },
+    {
+      "id": "api-law-005367-20260804-20260811",
+      "sourceUrl": "https://www.law.go.kr/법령/하도급거래공정화에관한법률시행령/(20260811,36562,20260804)",
+      "status": 200,
+      "resolved": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%ED%95%98%EB%8F%84%EA%B8%89%EA%B1%B0%EB%9E%98%EA%B3%B5%EC%A0%95%ED%99%94%EC%97%90%EA%B4%80%ED%95%9C%EB%B2%95%EB%A5%A0%EC%8B%9C%ED%96%89%EB%A0%B9/(20260811,36562,20260804)",
+      "iframes": [
+        "/LSW//lsInfoP.do?lsiSeq=288455&amp;chrClsCd=010202&amp;urlMode=lsInfoP&amp;efYd=20260811&amp;ancYnChk=0"
+      ],
+      "title": [
+        "하도급거래공정화에관한법률시행령"
+      ],
+      "error": false
+    }
+  ],
+  "scope": "Bounded HTTP checks of the eight official source entry pages and version parameters. External device/browser behavior is not guaranteed; all eight obtained bodies are also available in the app."
+}

@@ -1,0 +1,614 @@
+{
+  "verifiedAt": "2026-10-20T06:01:52.298854+00:00",
+  "scope": "24 added official links plus 1 previously retained corporate booklet; 25 practical material links total",
+  "bodyAcquisition": "link-only",
+  "copyrightPolicyUrl": "https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=8169&mi=6791",
+  "resources": [
+    {
+      "id": "nts-corporate-filing-process",
+      "title": "법인세 신고절차",
+      "pageTitle": "법인세 신고절차",
+      "sourceUrl": "https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7975&mi=6549",
+      "category": "법인세",
+      "scope": "국세청 법인신고안내의 세무조정 절차·결산조정 및 신고조정 항목 안내 페이지를 확인.",
+      "keywords": [
+        "법인세",
+        "신고",
+        "신고방법",
+        "신고절차",
+        "세무조정",
+        "결산",
+        "손금",
+        "익금"
+      ],
+      "agency": "국세청",
+      "domain": "tax",
+      "type": "guide",
+      "bodyStatus": "link",
+      "verifiedAt": "2026-10-20",
+      "publicationDate": null,
+      "contentYear": null,
+      "rightsStatus": "개별 페이지/첨부의 공공누리 표시 확인 못함. 원문 링크·제목·확인 범위만 제공 권장; 본문·첨부 재게시와 자동수집 권한 미확인.",
+      "attachments": []
+    },
+    {
+      "id": "nts-corporate-filing-notes",
+      "title": "법인세 신고시 유의사항",
+      "pageTitle": "신고시유의사항",
+      "sourceUrl": "https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7970&mi=6544",
+      "category": "법인세",
+      "scope": "2026년 법인세 신고시 달라지는 사항·신고시 유의할 사항·주요해석사례의 HWP/PDF 링크 목록 확인. 파일 본문은 확보하지 않음.",
+      "contentYear": 2026,
+      "keywords": [
+        "법인세",
+        "신고",
+        "신고방법",
+        "유의사항",
+        "2026",
+        "신고안내",
+        "개정사항"
+      ],
+      "attachments": [
+        {
+          "title": "2026년 법인세 신고시 달라지는 사항",
+          "fileName": "#5-1. 2026년 법인세 신고시 달라지는 사항(콘텐츠).hwp",
+          "format": "HWP",
+          "url": null,
+          "status": "공식 페이지에서 파일 링크 확인; 직접 파일 주소·본문 미확보"
+        },
+        {
+          "title": "2026 법인세 신고시 유의할 사항",
+          "fileName": "#5-2 신고시 유의사항(콘텐츠).pdf",
+          "format": "PDF",
+          "url": null,
+          "status": "공식 페이지에서 파일 링크 확인; 직접 파일 주소·본문 미확보"
+        }
+      ],
+      "agency": "국세청",
+      "domain": "tax",
+      "type": "guide",
+      "bodyStatus": "link",
+      "verifiedAt": "2026-10-20",
+      "publicationDate": null,
+      "rightsStatus": "개별 페이지/첨부의 공공누리 표시 확인 못함. 원문 링크·제목·확인 범위만 제공 권장; 본문·첨부 재게시와 자동수집 권한 미확인."
+    },
+    {
+      "id": "nts-corporate-no-activity-filing",
+      "title": "무실적 법인의 간편 전자신고",
+      "pageTitle": "영리법인 신고 안내",
+      "sourceUrl": "https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7978&mi=6552",
+      "category": "법인세",
+      "scope": "공식 페이지의 무실적 법인 간편 전자신고 탭에서 적용대상·적용제외·신고절차 확인. 페이지에 2025년도 사업실적 문구가 있어 최신 연도 적용을 보장하지 않음.",
+      "keywords": [
+        "법인세",
+        "무실적",
+        "무실적법인",
+        "간편신고",
+        "전자신고",
+        "신고방법",
+        "홈택스"
+      ],
+      "agency": "국세청",
+      "domain": "tax",
+      "type": "guide",
+      "bodyStatus": "link",
+      "verifiedAt": "2026-10-20",
+      "publicationDate": null,
+      "contentYear": null,
+      "rightsStatus": "개별 페이지/첨부의 공공누리 표시 확인 못함. 원문 링크·제목·확인 범위만 제공 권장; 본문·첨부 재게시와 자동수집 권한 미확인.",
+      "attachments": []
+    },
+    {
+      "id": "nts-corporate-interim-electronic",
+      "title": "법인세 중간예납 전자신고",
+      "pageTitle": "법인세 중간예납",
+      "sourceUrl": "https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7995&mi=6569",
+      "category": "법인세",
+      "scope": "공식 중간예납 전자신고 탭의 홈택스 신고·전송 및 별도 서류 제출 안내를 확인.",
+      "keywords": [
+        "법인세",
+        "중간예납",
+        "전자신고",
+        "신고방법",
+        "홈택스"
+      ],
+      "agency": "국세청",
+      "domain": "tax",
+      "type": "guide",
+      "bodyStatus": "link",
+      "verifiedAt": "2026-10-20",
+      "publicationDate": null,
+      "contentYear": null,
+      "rightsStatus": "개별 페이지/첨부의 공공누리 표시 확인 못함. 원문 링크·제목·확인 범위만 제공 권장; 본문·첨부 재게시와 자동수집 권한 미확인.",
+      "attachments": []
+    },
+    {
+      "id": "nts-vat-filing-payment-dates",
+      "title": "부가가치세 신고납부기한",
+      "pageTitle": "신고납부기한",
+      "sourceUrl": "https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7694&mi=2273",
+      "category": "부가가치세",
+      "scope": "일반·간이과세자, 신규사업자·폐업자의 과세기간과 신고·납부 기간 안내 페이지 확인. 개별 연도 휴일·특별연장 여부는 별도 확인 필요.",
+      "keywords": [
+        "부가가치세",
+        "부가세",
+        "신고",
+        "신고방법",
+        "납부",
+        "기한",
+        "간이과세자",
+        "일반과세자",
+        "폐업"
+      ],
+      "agency": "국세청",
+      "domain": "tax",
+      "type": "guide",
+      "bodyStatus": "link",
+      "verifiedAt": "2026-10-20",
+      "publicationDate": null,
+      "contentYear": null,
+      "rightsStatus": "개별 페이지/첨부의 공공누리 표시 확인 못함. 원문 링크·제목·확인 범위만 제공 권장; 본문·첨부 재게시와 자동수집 권한 미확인.",
+      "attachments": []
+    },
+    {
+      "id": "nts-vat-2026-first-final-guide",
+      "title": "692만 사업자, 7월 27일(월)까지 부가가치세 확정신고 하세요",
+      "pageTitle": "보도자료",
+      "sourceUrl": "https://www.nts.go.kr/nts/na/ntt/selectNttInfo.do?mi=2201&nttSn=1352987",
+      "category": "부가가치세",
+      "publicationDate": "2026-07-02",
+      "contentYear": 2026,
+      "scope": "2026년 제1기 부가가치세 확정신고 보도참고자료. 참고1에 PC 홈택스·모바일 손택스·ARS·우편방문 신고 및 납부 방법을 수록한 것을 확인. 해당 기간 안내이며 이후 신고기간으로 자동 적용 금지.",
+      "keywords": [
+        "부가가치세",
+        "부가세",
+        "2026",
+        "확정신고",
+        "신고방법",
+        "홈택스",
+        "손택스",
+        "무실적",
+        "납부기한"
+      ],
+      "attachments": [
+        {
+          "title": "부가가치세 확정신고 보도참고자료",
+          "fileName": "20260702 692만 사업자, 7월 27일(월)까지 부가가치세 확정신고 하세요(보도참고자료).pdf",
+          "format": "PDF",
+          "url": "https://www.nts.go.kr/comm/nttFileDownload.do?fileKey=32867bc5584e1aa2963738b26cbbba10",
+          "status": "원문 페이지에서 클릭해 주소 확인; 도구가 binary Unicode decoding error로 읽지 못해 PDF 본문 미확보"
+        }
+      ],
+      "agency": "국세청",
+      "domain": "tax",
+      "type": "guide",
+      "bodyStatus": "link",
+      "verifiedAt": "2026-10-20",
+      "rightsStatus": "개별 페이지/첨부의 공공누리 표시 확인 못함. 원문 링크·제목·확인 범위만 제공 권장; 본문·첨부 재게시와 자동수집 권한 미확인."
+    },
+    {
+      "id": "nts-withholding-filing-payment-dates",
+      "title": "원천세 신고납부기한",
+      "pageTitle": "신고납부기한",
+      "sourceUrl": "https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7702&mi=2290",
+      "category": "원천징수",
+      "scope": "일반·반기 납부 원천징수, 연말정산, 소득별 지급명세서의 기한·제출서류 표를 확인.",
+      "keywords": [
+        "원천세",
+        "원천징수",
+        "신고",
+        "신고방법",
+        "납부",
+        "반기납부",
+        "원천징수이행상황신고서",
+        "지급명세서"
+      ],
+      "agency": "국세청",
+      "domain": "tax",
+      "type": "guide",
+      "bodyStatus": "link",
+      "verifiedAt": "2026-10-20",
+      "publicationDate": null,
+      "contentYear": null,
+      "rightsStatus": "개별 페이지/첨부의 공공누리 표시 확인 못함. 원문 링크·제목·확인 범위만 제공 권장; 본문·첨부 재게시와 자동수집 권한 미확인.",
+      "attachments": []
+    },
+    {
+      "id": "nts-payment-statement-submission",
+      "title": "지급명세서 제출",
+      "pageTitle": "지급명세서 제출",
+      "sourceUrl": "https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=8631&mi=12242",
+      "category": "원천징수",
+      "scope": "소득별 지급명세서 제출시기, 홈택스 전자제출, 수시·수정 제출 및 가산세 안내를 확인. 페이지에 이전 시기 한정 내용도 포함되어 적용연도 별도 확인 필요.",
+      "keywords": [
+        "원천징수",
+        "지급명세서",
+        "간이지급명세서",
+        "제출방법",
+        "전자제출",
+        "수정제출",
+        "신고방법",
+        "홈택스"
+      ],
+      "agency": "국세청",
+      "domain": "tax",
+      "type": "guide",
+      "bodyStatus": "link",
+      "verifiedAt": "2026-10-20",
+      "publicationDate": null,
+      "contentYear": null,
+      "rightsStatus": "개별 페이지/첨부의 공공누리 표시 확인 못함. 원문 링크·제목·확인 범위만 제공 권장; 본문·첨부 재게시와 자동수집 권한 미확인.",
+      "attachments": []
+    },
+    {
+      "id": "nts-individual-income-filing-methods",
+      "sourceTitle": "신고·납부방법",
+      "title": "종합소득세 신고·납부방법",
+      "sourceUrl": "https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=238910&mi=40296",
+      "documentDate": null,
+      "taxYear": null,
+      "tags": [
+        "종합소득세",
+        "신고 방법",
+        "전자신고",
+        "손택스",
+        "개인사업자"
+      ],
+      "observedScope": "홈택스·손택스·서면 신고와 납부 방법 안내.",
+      "citation": "turn405440view0, 본문1086~1120행",
+      "attachments": [],
+      "agency": "국세청",
+      "domain": "tax",
+      "type": "guide",
+      "bodyStatus": "link",
+      "allowedDownload": false,
+      "verifiedAt": "2026-10-20",
+      "rights": "공식 안내 페이지의 제목·링크와 확인한 수록 범위만 연결. 개별 자료의 재게시·다운로드 권한 및 공공누리 유형은 미확인으로 본문·첨부를 재게시하지 않음.",
+      "confirmationMethod": "국세청 공식 메뉴에서 클릭한 URL의 본문 제목·세목 경로와 실제 안내 항목을 웹 도구로 대조"
+    },
+    {
+      "id": "nts-individual-yearend-2025",
+      "sourceTitle": "연말정산 종합 안내",
+      "title": "2025년 귀속 연말정산 종합 안내",
+      "sourceUrl": "https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=238938&mi=2304",
+      "documentDate": null,
+      "taxYear": 2025,
+      "tags": [
+        "연말정산",
+        "근로소득",
+        "신고 방법",
+        "신고 안내서",
+        "2025년 귀속"
+      ],
+      "observedScope": "2025년 귀속 안내 책자·리플릿·주요서식과 동영상 연결.",
+      "citation": "turn273086view0, 본문1085~1101행",
+      "attachments": [
+        {
+          "name": "2025년 연말정산 신고안내(책자)",
+          "url": "https://www.nts.go.kr/comm/nttFileDownload.do?fileKey=88c482e8d69eb1653515871654a4ab42",
+          "acquisition": "원문 링크 확인. 웹 도구의 4MiB 응답 한도 초과로 본문 미확보."
+        },
+        {
+          "name": "근로자를 위한 신고안내(리플릿)",
+          "url": "https://www.nts.go.kr/comm/nttFileDownload.do?fileKey=eb079dcdb9aedea1fe391cc9cbd9569c",
+          "acquisition": "원문 링크 확인. 바이너리 형식으로 본문 미확보."
+        },
+        {
+          "name": "2025년 연말정산 주요서식 모음",
+          "url": "https://www.nts.go.kr/comm/nttFileDownload.do?fileKey=41428acf95e8cab03a4ba3f514334b91",
+          "acquisition": "원문 링크 확인. 바이너리 형식으로 본문 미확보."
+        }
+      ],
+      "agency": "국세청",
+      "domain": "tax",
+      "type": "guide",
+      "bodyStatus": "link",
+      "allowedDownload": false,
+      "verifiedAt": "2026-10-20",
+      "rights": "공식 안내 페이지의 제목·링크와 확인한 수록 범위만 연결. 개별 자료의 재게시·다운로드 권한 및 공공누리 유형은 미확인으로 본문·첨부를 재게시하지 않음.",
+      "confirmationMethod": "국세청 공식 메뉴에서 클릭한 URL의 본문 제목·세목 경로와 실제 안내 항목을 웹 도구로 대조"
+    },
+    {
+      "id": "nts-individual-yearend-service",
+      "sourceTitle": "편리한 연말정산 이용방법",
+      "title": "편리한 연말정산 이용방법",
+      "sourceUrl": "https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7706&mi=2305",
+      "documentDate": null,
+      "taxYear": null,
+      "tags": [
+        "연말정산",
+        "근로소득",
+        "간소화자료",
+        "공제신고서",
+        "회사",
+        "동영상"
+      ],
+      "observedScope": "근로자·회사 유형별 간소화자료 조회·제출 이용 안내.",
+      "citation": "turn273086view1, 본문1085~1103행",
+      "attachments": [],
+      "agency": "국세청",
+      "domain": "tax",
+      "type": "guide",
+      "bodyStatus": "link",
+      "allowedDownload": false,
+      "verifiedAt": "2026-10-20",
+      "rights": "공식 안내 페이지의 제목·링크와 확인한 수록 범위만 연결. 개별 자료의 재게시·다운로드 권한 및 공공누리 유형은 미확인으로 본문·첨부를 재게시하지 않음.",
+      "confirmationMethod": "국세청 공식 메뉴에서 클릭한 URL의 본문 제목·세목 경로와 실제 안내 항목을 웹 도구로 대조"
+    },
+    {
+      "id": "nts-individual-capital-filing",
+      "sourceTitle": "신고납부안내",
+      "title": "양도소득세 신고납부안내",
+      "sourceUrl": "https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7713&mi=2314",
+      "documentDate": null,
+      "taxYear": null,
+      "tags": [
+        "양도소득세",
+        "신고 방법",
+        "예정신고",
+        "확정신고",
+        "준비서류"
+      ],
+      "observedScope": "신고 준비서류, 신고·납부기한과 전자·서면 신고 안내.",
+      "citation": "turn405440view3, 본문1085~1122행",
+      "attachments": [],
+      "agency": "국세청",
+      "domain": "tax",
+      "type": "guide",
+      "bodyStatus": "link",
+      "allowedDownload": false,
+      "verifiedAt": "2026-10-20",
+      "rights": "공식 안내 페이지의 제목·링크와 확인한 수록 범위만 연결. 개별 자료의 재게시·다운로드 권한 및 공공누리 유형은 미확인으로 본문·첨부를 재게시하지 않음.",
+      "confirmationMethod": "국세청 공식 메뉴에서 클릭한 URL의 본문 제목·세목 경로와 실제 안내 항목을 웹 도구로 대조"
+    },
+    {
+      "id": "nts-individual-capital-evidence",
+      "sourceTitle": "양도신고서별제출증빙서류",
+      "title": "양도신고서별 제출 증빙서류",
+      "sourceUrl": "https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7716&mi=2317",
+      "documentDate": null,
+      "taxYear": null,
+      "tags": [
+        "양도소득세",
+        "신고 증빙",
+        "첨부서류",
+        "부동산",
+        "비과세"
+      ],
+      "observedScope": "양도신고 구분별 추가 증빙서류 안내.",
+      "citation": "turn273086view3, 본문1085~1103행",
+      "attachments": [],
+      "agency": "국세청",
+      "domain": "tax",
+      "type": "guide",
+      "bodyStatus": "link",
+      "allowedDownload": false,
+      "verifiedAt": "2026-10-20",
+      "rights": "공식 안내 페이지의 제목·링크와 확인한 수록 범위만 연결. 개별 자료의 재게시·다운로드 권한 및 공공누리 유형은 미확인으로 본문·첨부를 재게시하지 않음.",
+      "confirmationMethod": "국세청 공식 메뉴에서 클릭한 URL의 본문 제목·세목 경로와 실제 안내 항목을 웹 도구로 대조"
+    },
+    {
+      "id": "nts-individual-inheritance-filing",
+      "sourceTitle": "신고시 유의사항",
+      "title": "상속세 신고시 유의사항",
+      "sourceUrl": "https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7722&mi=2328",
+      "documentDate": null,
+      "taxYear": null,
+      "tags": [
+        "상속세",
+        "증여·상속",
+        "신고 방법",
+        "신고서 작성",
+        "제출서류"
+      ],
+      "observedScope": "상속세 신고서 작성 순서·제출서류·관할과 기한 안내.",
+      "citation": "turn405440view1, 본문1085~1119행",
+      "attachments": [],
+      "agency": "국세청",
+      "domain": "tax",
+      "type": "guide",
+      "bodyStatus": "link",
+      "allowedDownload": false,
+      "verifiedAt": "2026-10-20",
+      "rights": "공식 안내 페이지의 제목·링크와 확인한 수록 범위만 연결. 개별 자료의 재게시·다운로드 권한 및 공공누리 유형은 미확인으로 본문·첨부를 재게시하지 않음.",
+      "confirmationMethod": "국세청 공식 메뉴에서 클릭한 URL의 본문 제목·세목 경로와 실제 안내 항목을 웹 도구로 대조"
+    },
+    {
+      "id": "nts-individual-gift-filing",
+      "sourceTitle": "신고시 유의사항",
+      "title": "증여세 신고시 유의사항",
+      "sourceUrl": "https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7730&mi=2342",
+      "documentDate": null,
+      "taxYear": null,
+      "tags": [
+        "증여세",
+        "증여·상속",
+        "신고 방법",
+        "신고서 작성",
+        "전자신고"
+      ],
+      "observedScope": "증여세 신고서 작성·제출서류·전자신고 유형 안내.",
+      "citation": "turn405440view2, 본문1086~1123행",
+      "attachments": [],
+      "agency": "국세청",
+      "domain": "tax",
+      "type": "guide",
+      "bodyStatus": "link",
+      "allowedDownload": false,
+      "verifiedAt": "2026-10-20",
+      "rights": "공식 안내 페이지의 제목·링크와 확인한 수록 범위만 연결. 개별 자료의 재게시·다운로드 권한 및 공공누리 유형은 미확인으로 본문·첨부를 재게시하지 않음.",
+      "confirmationMethod": "국세청 공식 메뉴에서 클릭한 URL의 본문 제목·세목 경로와 실제 안내 항목을 웹 도구로 대조"
+    },
+    {
+      "id": "nts-individual-inheritance-installment-20260930",
+      "sourceTitle": "알기쉬운 상속세 및 증여세 연부연납제도 Q&A",
+      "title": "알기쉬운 상속세 및 증여세 연부연납제도 Q&A",
+      "sourceUrl": "https://www.nts.go.kr/nts/na/ntt/selectNttInfo.do?mi=40552&nttSn=1355320",
+      "documentDate": "2026-09-30",
+      "taxYear": null,
+      "tags": [
+        "상속세",
+        "증여세",
+        "증여·상속",
+        "납부 방법",
+        "연부연납",
+        "안내 책자"
+      ],
+      "observedScope": "국세청이 게시한 연부연납 안내 책자. 첨부 본문 미확보.",
+      "citation": "turn917764view0, 본문1086~1101행",
+      "attachments": [
+        {
+          "name": "알기쉬운 상속세 및 증여세 연부연납제도 Q&A(2026.9월).pdf",
+          "url": null,
+          "acquisition": "게시물에서 첨부명·미리보기 제공 확인. 파일 본문 및 다운로드 URL은 미확보."
+        }
+      ],
+      "agency": "국세청",
+      "domain": "tax",
+      "type": "guide",
+      "bodyStatus": "link",
+      "allowedDownload": false,
+      "verifiedAt": "2026-10-20",
+      "rights": "공식 안내 페이지의 제목·링크와 확인한 수록 범위만 연결. 개별 자료의 재게시·다운로드 권한 및 공공누리 유형은 미확인으로 본문·첨부를 재게시하지 않음.",
+      "confirmationMethod": "국세청 공식 메뉴에서 클릭한 URL의 본문 제목·세목 경로와 실제 안내 항목을 웹 도구로 대조"
+    },
+    {
+      "id": "nts-individual-gift-misconceptions-20260531",
+      "sourceTitle": "상속 · 증여세 오해 그리고 진실",
+      "title": "상속 · 증여세 오해 그리고 진실",
+      "sourceUrl": "https://www.nts.go.kr/nts/na/ntt/selectNttInfo.do?mi=40552&nttSn=1351950",
+      "documentDate": "2026-05-31",
+      "taxYear": null,
+      "tags": [
+        "상속세",
+        "증여세",
+        "증여·상속",
+        "실무 안내",
+        "안내 책자"
+      ],
+      "observedScope": "국세청 상속·증여세 안내 자료와 관련 영상 게시물. 첨부 본문 미확보.",
+      "citation": "turn917764view1, 본문1086~1107행",
+      "attachments": [
+        {
+          "name": "국세청-상속·증여세 오해 그리고 진실.pdf",
+          "url": null,
+          "acquisition": "게시물에서 첨부명·미리보기 제공 확인. 파일 본문 및 다운로드 URL은 미확보."
+        }
+      ],
+      "agency": "국세청",
+      "domain": "tax",
+      "type": "guide",
+      "bodyStatus": "link",
+      "allowedDownload": false,
+      "verifiedAt": "2026-10-20",
+      "rights": "공식 안내 페이지의 제목·링크와 확인한 수록 범위만 연결. 개별 자료의 재게시·다운로드 권한 및 공공누리 유형은 미확인으로 본문·첨부를 재게시하지 않음.",
+      "confirmationMethod": "국세청 공식 메뉴에서 클릭한 URL의 본문 제목·세목 경로와 실제 안내 항목을 웹 도구로 대조"
+    },
+    {
+      "id": "nts-common-electronic-payment",
+      "title": "국세전자납부 안내",
+      "sourceTitle": "국세전자납부 안내",
+      "sourceUrl": "https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7741&mi=2364",
+      "tags": [
+        "신고·납부 공통",
+        "납부방법",
+        "전자납부",
+        "홈택스",
+        "인터넷지로"
+      ],
+      "resourceKind": "납부 방법",
+      "verification": "공식 메뉴 클릭 후 실제 본문의 전자납부 요령 및 금융기관별 접속 방법 확인"
+    },
+    {
+      "id": "nts-common-business-registration",
+      "title": "사업자등록 신청",
+      "sourceTitle": "사업자등록 신청",
+      "sourceUrl": "https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7777&mi=2444",
+      "tags": [
+        "신고·납부 공통",
+        "사업자등록",
+        "신청방법",
+        "제출서류",
+        "홈택스"
+      ],
+      "resourceKind": "신청 방법",
+      "verification": "공식 메뉴 클릭 후 실제 본문의 사업자등록 신청 절차·공동사업·홈택스 제출 안내 확인"
+    },
+    {
+      "id": "nts-common-income-data-submission",
+      "title": "소득자료 제출방법 등",
+      "sourceTitle": "소득자료 제출방법 등",
+      "sourceUrl": "https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=239045&mi=40990",
+      "tags": [
+        "원천세",
+        "신고·납부 공통",
+        "지급명세서",
+        "간이지급명세서",
+        "제출방법",
+        "홈택스",
+        "손택스"
+      ],
+      "resourceKind": "제출 방법",
+      "verification": "공식 메뉴 클릭 후 실제 본문의 홈택스·손택스·서면 제출 및 주요 서식 안내 확인"
+    },
+    {
+      "id": "nts-common-tax-forms",
+      "title": "국세청 세무서식 검색",
+      "sourceTitle": "세무서식",
+      "sourceUrl": "https://www.nts.go.kr/nts/ad/nf/nltFormatApiList.do?mi=40178",
+      "tags": [
+        "신고·납부 공통",
+        "신고서식",
+        "세무서식",
+        "서식",
+        "첨부서류"
+      ],
+      "type": "form",
+      "resourceKind": "서식 검색",
+      "verification": "공식 메뉴 클릭 후 법령별 서식 검색과 국가법령정보센터 제공 파일 안내 확인. 개별 서식 자체는 미수록"
+    },
+    {
+      "id": "nts-corporate-filing-video-2026",
+      "title": "성실신고 지원을 위한 2026법인세 신고안내",
+      "sourceTitle": "성실신고 지원을 위한 2026법인세 신고안내",
+      "sourceUrl": "https://www.nts.go.kr/nts/na/ntt/selectNttInfo.do?mi=40246&nttSn=1349412",
+      "category": "법인세",
+      "documentDate": "2026-03-03",
+      "taxYear": 2025,
+      "resourceKind": "동영상",
+      "keywords": [
+        "법인세",
+        "신고방법",
+        "신고안내",
+        "홈택스",
+        "신고도움 서비스",
+        "2026"
+      ],
+      "verification": "공식 동영상 게시물 제목·등록일·영상과 대본 존재 확인. 영상·대본 본문은 앱에 수록하지 않음"
+    },
+    {
+      "id": "nts-inheritance-common-questions-20240604",
+      "title": "국세청-상속·증여 세금상식Ⅱ",
+      "sourceUrl": "https://www.nts.go.kr/nts/na/ntt/selectNttInfo.do?mi=40552&nttSn=1334788",
+      "documentDate": "2024-06-04",
+      "bodyStatus": "link",
+      "verification": "공식 게시판의 제목·등록일·data-id와 상세 링크 대조. 본문·첨부파일 재게시 미허용으로 처리."
+    },
+    {
+      "id": "nts-inheritance-common-questions-20230428",
+      "title": "국세청-상속 · 증여 세금상식",
+      "sourceUrl": "https://www.nts.go.kr/nts/na/ntt/selectNttInfo.do?mi=40552&nttSn=1323484",
+      "documentDate": "2023-04-28",
+      "bodyStatus": "link",
+      "verification": "공식 게시판의 제목·등록일·data-id와 상세 링크 대조. 본문·첨부파일 재게시 미허용으로 처리."
+    }
+  ],
+  "boardReview": {
+    "url": "https://www.nts.go.kr/nts/na/ntt/selectNttList.do?mi=40552&bbsId=50790",
+    "title": "상속 · 증여 안심 가이드",
+    "totalItems": 4,
+    "listedItemsInApp": 4,
+    "reviewedAt": "2026-10-20",
+    "scope": "게시판 1페이지 전체 4건의 메타데이터. 본문·첨부파일 미수집."
+  }
+}

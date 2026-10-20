@@ -1,0 +1,13 @@
+dist/
+*.tar.gz
+*.log
+.env*
+!.env.example
+node_modules/
+.sites-runtime/
+
+__pycache__/
+
+.local-data/
+exports/
+*.zip

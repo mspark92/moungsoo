@@ -1,0 +1,234 @@
+{
+  "format": 1,
+  "date": "2026-10-20",
+  "sourceRepository": "https://github.com/mspark92/moungsoo",
+  "productionVersion": 11,
+  "productionSourceCommit": "1ceeca049f0e6db3f637beea4c18ecf10ef8360c",
+  "localHandoffAdds": [
+    "CLAUDE.md",
+    "docs/CLAUDE-HANDOFF-KO.md",
+    "scripts/dev.mjs",
+    ".env.example",
+    "test/local-dev.test.mjs"
+  ],
+  "dataRecords": 68,
+  "credentialsIncluded": false,
+  "productionStorageIncluded": false,
+  "files": [
+    {
+      "path": ".env.example",
+      "bytes": 351,
+      "sha256": "3373f863ad8b6da0c32e9b4c7110d66999d714a60f1a991bd6d86dd614f66316"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 114,
+      "sha256": "701197c78eaf4af7171e3ea7abe0d7c5522fce6654de97cac38226498cce4cf3"
+    },
+    {
+      "path": ".openai/hosting.json",
+      "bytes": 95,
+      "sha256": "fa8c449e1031d88893cd9e051433e3094cdb0f44135a66f799e3552bddb92017"
+    },
+    {
+      "path": "CLAUDE.md",
+      "bytes": 3142,
+      "sha256": "5ebfd33195c006f110597e51f4c36b8586751e23d4b1cd2321af91f9e8f29bcc"
+    },
+    {
+      "path": "README.md",
+      "bytes": 7926,
+      "sha256": "62aecdbfbc37f4bebb2e691f0d55b2a972e480c15291d4c55316fb37d893ff80"
+    },
+    {
+      "path": "data/seed.json",
+      "bytes": 4339276,
+      "sha256": "14ae724209b460ccf2ae559c6a666498ef4ac47abe031681d5209d85ef5bb6db"
+    },
+    {
+      "path": "docs/CLAUDE-HANDOFF-KO.md",
+      "bytes": 10539,
+      "sha256": "1977e48146edad7ae4c1bfcd4c72a9c3bdf41e062dabc32974bc1b0235f68e10"
+    },
+    {
+      "path": "docs/LAW-BROWSING-QA.md",
+      "bytes": 1749,
+      "sha256": "13b14e7d5d3864c44aa1521736fff99fcc1edc973fabcff1e0c6a719f3390963"
+    },
+    {
+      "path": "docs/LAW-CATALOG-QA.md",
+      "bytes": 1936,
+      "sha256": "2e663ffc54414125117110ee6cc67a99213962c3018f96050482783c190ee076"
+    },
+    {
+      "path": "docs/QA-2026-10-20-bottom-navigation.md",
+      "bytes": 931,
+      "sha256": "14f842833ca3722fe64a911b9f02fb1548a05606d3a3b89298303fd61b2b898e"
+    },
+    {
+      "path": "docs/QA-2026-10-20-mobile-and-source-links.md",
+      "bytes": 2652,
+      "sha256": "3ea994c51d5aced9ae5b85c7f1da56b4553517f9ddee0e5baf47c8280b8d4b07"
+    },
+    {
+      "path": "docs/QA-2026-10-20-search-and-nts.md",
+      "bytes": 3184,
+      "sha256": "c07b16e5f6ffca37e4766118d47ea05c8089cb160816bd8f7527956ab4942ed6"
+    },
+    {
+      "path": "docs/SOURCES.md",
+      "bytes": 14302,
+      "sha256": "a94e315f56be036e2774b279f5da77a046dd4fa20196478b28a6c2ad4e72205a"
+    },
+    {
+      "path": "docs/law-source-links-2026-10-20.json",
+      "bytes": 5730,
+      "sha256": "abd88e52345fb8667ea143aef10633291376251a2cc5a140cede064a7313dfdd"
+    },
+    {
+      "path": "docs/nts-court-link-sources.json",
+      "bytes": 7815,
+      "sha256": "1e02671f08e167faff30aee20bee4ee02cdd02dde89214a0ba23a26e1a9b6ee2"
+    },
+    {
+      "path": "docs/nts-guide-sources.json",
+      "bytes": 26931,
+      "sha256": "8b25121983a904eea46ffede8e5212bd4c78fc0e41f1ca0c2bf28d7470ae279c"
+    },
+    {
+      "path": "lib/search.mjs",
+      "bytes": 19991,
+      "sha256": "15e4be40635dc3b51dfd742c3c4dc57105d776e1fffada4a13f70dee578a6b30"
+    },
+    {
+      "path": "package.json",
+      "bytes": 314,
+      "sha256": "c7eabfbbecb214d3d18e8ca8fe68ed9d1b2f82cc97deb9e519a7552a0230a667"
+    },
+    {
+      "path": "public/app.js",
+      "bytes": 85265,
+      "sha256": "bb1462909067b09bed83d64c8b07089197e8ddc14543598a955a2f540ba90bfc"
+    },
+    {
+      "path": "public/favicon.svg",
+      "bytes": 257,
+      "sha256": "5789b4934055a6030f94b1ad01fb2f1f36ec659c7f483aac071af7d49efa0359"
+    },
+    {
+      "path": "public/index.html",
+      "bytes": 6397,
+      "sha256": "49ccf746796b33527ba15ec1f3da8940c21403be23f85c6b4627982bb4c381e7"
+    },
+    {
+      "path": "public/styles.css",
+      "bytes": 44564,
+      "sha256": "224f89bc45275fe2a87f7fea4d2853cde1d2d5d103b20e2b89d627e4d247c52b"
+    },
+    {
+      "path": "scripts/build.mjs",
+      "bytes": 2202,
+      "sha256": "13d61806fbafdd5da612ffc5352e81d9dfa174026a6cfafcf1ee7af57d37d788"
+    },
+    {
+      "path": "scripts/dev.mjs",
+      "bytes": 4664,
+      "sha256": "173cea5dbfd906e2c46ffde767de9a29040fd3e6daaab3ed37850ec5e06e6c5c"
+    },
+    {
+      "path": "scripts/hosted-smoke.py",
+      "bytes": 1749,
+      "sha256": "a4a911137be487762ae81a797b3464eb2e7ebdbb0c21e989af36521f77070faf"
+    },
+    {
+      "path": "scripts/sync-source.py",
+      "bytes": 2195,
+      "sha256": "64e42aec29f80e96d912d487074e726a8c3207d86c0e086b03e8a7a872982f93"
+    },
+    {
+      "path": "test/amendments-view.test.mjs",
+      "bytes": 2572,
+      "sha256": "98a0e163403ed98d87aa02310e46be7f146cce8999ade866cc45ab7a01d775fe"
+    },
+    {
+      "path": "test/article-matches.test.mjs",
+      "bytes": 4389,
+      "sha256": "a59c68489bec89a14dd58efd61f16e35668df63ea1f64e38d1ffbb3aac42390b"
+    },
+    {
+      "path": "test/full-law-search.test.mjs",
+      "bytes": 5265,
+      "sha256": "958bcf608c43b3b103996b2619b6d1df55031120f65c9aeaf6851e47921d2c1d"
+    },
+    {
+      "path": "test/law-browsing.test.mjs",
+      "bytes": 2293,
+      "sha256": "3689d020cd9b788e246b12d830eab0d55eb8e3d120c06c86aed4844127147838"
+    },
+    {
+      "path": "test/law-category.test.mjs",
+      "bytes": 4655,
+      "sha256": "f5de3337f1208c0ccd671248fd54cd8cecfd044802b82efca5ff6f67a5b02f1b"
+    },
+    {
+      "path": "test/law-source-links.test.mjs",
+      "bytes": 3520,
+      "sha256": "cf4cb6d803412a1162ccfec2c7591e6aac2ddfdf3c9c2d840e79702a09773ac7"
+    },
+    {
+      "path": "test/local-dev.test.mjs",
+      "bytes": 3769,
+      "sha256": "a48b586a1b4c10558061d5ee29c6900acb9ead9f9fe4b8c1adb4e40f3533229f"
+    },
+    {
+      "path": "test/nts-cases.test.mjs",
+      "bytes": 15301,
+      "sha256": "4b73f5e64755e1d529e0feffa992b150d590e8ddba248f91098cea5945685ec3"
+    },
+    {
+      "path": "test/nts-guides.test.mjs",
+      "bytes": 5626,
+      "sha256": "f9960f47fb94c490761be3c76bb32417e2b6903faa7984304f5cb3616f2f90cc"
+    },
+    {
+      "path": "test/public-access.test.mjs",
+      "bytes": 2940,
+      "sha256": "46dd6742bafb5b44e4a2f8eddd46849aa284f025d39bcfccefaa0bad6f3c1e8c"
+    },
+    {
+      "path": "test/scheduler-auth.test.mjs",
+      "bytes": 4387,
+      "sha256": "c2f2d51f2ca9dacd318cfb2dcf98176916c39b5a47b6ba4af079f6e0de7b9493"
+    },
+    {
+      "path": "test/updates.test.mjs",
+      "bytes": 5539,
+      "sha256": "13252f79d4bdc8ed60589e95459cda4f189bb51436d0ff4a58521ed90a736eb0"
+    },
+    {
+      "path": "test/worker.test.mjs",
+      "bytes": 5179,
+      "sha256": "955b0a6e6ed38e8cd1462116a288daa48d06dd1809cd7d8649bacc97f6729336"
+    },
+    {
+      "path": "worker/index.js",
+      "bytes": 4532722,
+      "sha256": "aa6b97f532408898236877befd3d4effb8fe4e108bbb21cd9661959e01d3d0cd"
+    },
+    {
+      "path": "worker/law-updates.mjs",
+      "bytes": 24270,
+      "sha256": "7acafa6be0e786dcea368510feb98b729c1c143d74481e0b38cb64c2529bdfa2"
+    },
+    {
+      "path": "worker/runtime.mjs",
+      "bytes": 30761,
+      "sha256": "0432349fa4f3b6cdfcd2d3323e7609a4f504980a7b1f84fc45d112a56af2bef5"
+    },
+    {
+      "path": "worker/scheduler-auth.mjs",
+      "bytes": 2675,
+      "sha256": "8513347aff02bc4b0f1b70eb483377f752c30b9003ab1c80581f06f474ed9fcf"
+    }
+  ]
+}

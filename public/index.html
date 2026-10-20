@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#142b47">
+  <meta name="description" content="대한민국 세무·하도급 공식 자료를 검색하고 적용 조건과 원문 근거를 확인하는 기업 업무용 레퍼런스">
+  <title>기업 법무·세무 레퍼런스</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/styles.css"><script src="/app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">본문 바로가기</a>
+
+<div class="app-shell">
+ <header class="topbar"><div class="topbar-left"><button class="icon-button mobile-menu" id="menuToggle" aria-label="메뉴 열기" aria-controls="sidebar" aria-expanded="false">☰</button><span class="breadcrumb">워크스페이스 <span>/</span> <strong id="breadcrumb">통합 인사이트</strong></span></div><div class="topbar-right"><span class="live-dot"></span><span id="topStatus">자료 범위 확인 중</span><span class="top-divider"></span><button class="local-profile" id="localProfile"><span>내</span> 로컬 보관함</button></div></header>
+ <aside class="sidebar" id="sidebar">
+ <a class="brand" href="/" aria-label="기업 법무·세무 레퍼런스 홈"><span class="brand-mark">L<span>R</span></span><span>기업 법무·세무<br><strong>레퍼런스</strong></span></a>
+ <div class="workspace-label">WORKSPACE <span>공식 자료 기반</span></div>
+ <nav aria-label="주 메뉴" id="nav"></nav>
+ <div class="sidebar-bottom"><div class="mode-dot"></div><strong>근거 검색 모드</strong><p>공식 자료를 직접 검토하는<br>리서치 워크스페이스</p><span class="outline-label">AI 연결 없음 · 호출 비용 없음</span></div>
+ <div class="sidebar-foot">LEGAL & TAX REFERENCE <span>대한민국</span></div>
+</aside>
+ <main id="main" tabindex="-1">
+  <div class="page-top"><span class="eyebrow" id="eyebrow">YOUR REFERENCE, YOUR CONFIDENCE</span><span class="page-date" id="today"></span></div>
+  <div id="heading"></div>
+  <section class="search-area" aria-label="통합 검색">
+   <div class="law-search-intro"><span>국가법령정보센터 공식 자료</span><h2>세무·하도급 법령을 한곳에서</h2><p>법령명이나 본문 내용으로 검색하고, 조문 전체와 부칙을 함께 읽어보세요.</p></div>
+   <div class="search-tabs" id="domains" role="group" aria-label="분야 선택"><button data-domain="all" class="active">전체</button><button data-domain="tax"><span class="domain-dot tax"></span>세무</button><button data-domain="subcontract"><span class="domain-dot subcontract"></span>하도급</button><span class="search-mode">⌕ &nbsp;근거 검색</span></div>
+   <form id="searchForm"><div class="search-input-wrap"><span class="search-icon" aria-hidden="true">⌕</span><input id="query" type="search" autocomplete="off" aria-label="자연어 질문·키워드·조문번호 검색" placeholder="상황을 입력하거나, 법령명·조문번호로 검색하세요"><kbd>/</kbd><button class="primary search-submit" type="submit">검색 <span>↗</span></button></div><div class="search-bottom"><span>예시</span><button type="button" class="example" data-query="법인세법">법인세법</button><button type="button" class="example" data-query="외주 대금 지급">외주 대금 지급</button><span class="search-help">질문 예시는 입력을 돕기 위한 안내입니다.</span></div></form>
+   <div class="date-filter"><label>기준일 <input type="date" id="referenceDate" aria-label="자료 기준일"></label><label>귀속연도 <select id="referenceYear" aria-label="귀속연도"><option value="">전체 연도</option></select></label><button class="text-button" id="advancedToggle" aria-expanded="false">상세 조건 <span>＋</span></button><span class="date-help">시점 자료가 없으면 확인 불가로 안내합니다.</span></div>
+   <div class="advanced hidden" id="advanced"><label>자료 유형<select id="typeFilter"><option value="all">전체 유형</option><option value="law">법률</option><option value="decree">시행령</option><option value="rule">시행규칙</option><option value="case">판례·사례</option><option value="interpretation">해석례</option><option value="decision">심결례</option><option value="ruling">법원 판례</option><option value="guide">안내서</option><option value="form">서식</option><option value="guideline">실무 지침</option></select></label><label>발행기관<input id="agencyFilter" placeholder="예: 법제처"></label><label>세목·쟁점<input id="topicFilter" placeholder="예: 법인세, 대금 지급"></label><label>시행 상태<select id="statusFilter"><option value="">전체 상태</option><option value="current">확인일 기준 시행</option><option value="past">과거 버전</option><option value="future">공포 후 시행 전</option><option value="unknown">시점 미확인</option></select></label><label>문서일자 시작<input type="date" id="fromFilter"></label><label>문서일자 종료<input type="date" id="toFilter"></label><button class="secondary" id="applyFilters">조건 적용</button><button class="text-button" id="resetFilters">초기화</button></div>
+  </section>
+  <div id="notice" role="status" aria-live="polite"></div>
+  <div id="content"></div>
+  <footer class="main-footer"><span>기업 법무·세무 레퍼런스</span><p>검색 결과는 확보된 자료 범위에 한합니다. 개별 사안의 적용 여부는 사실관계와 해당 시점의 원문을 함께 확인하세요.</p><button class="text-button" id="scopeFooter">수집 범위·출처 확인 ↗</button></footer>
+ </main>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<dialog id="scopeDialog"><div class="dialog-heading"><div><span class="eyebrow">SOURCE & COVERAGE</span><h2>자료 수집 범위와 이용 조건</h2></div><button class="icon-button" data-close="scopeDialog" aria-label="닫기">×</button></div><div id="scopeBody"></div></dialog>
+<dialog id="readerDialog" class="reader-dialog"><div id="reader"></div></dialog>
+<noscript>이 앱은 검색·필터 기능에 JavaScript를 사용합니다. JavaScript를 활성화하거나 국가법령정보센터(law.go.kr)의 공식 자료를 확인하세요.</noscript>
+</body></html>
