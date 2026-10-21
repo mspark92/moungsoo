@@ -216,7 +216,14 @@ export async function handleRequest(request, env, ctx, SEED, ASSETS) {
       importLaw: async input => mutate(env, SEED, state => {
         const doc = sanitizeDocument({ ...input, reviewStatus: 'published' }); doc.id = input.id;
         const duplicate = state.documents.find(item => item.id === doc.id || (item.type === doc.type && (item.lawKey || item.lawName) === doc.lawKey && item.effectiveFrom === doc.effectiveFrom && item.promulgatedAt === doc.promulgatedAt && item.bodyStatus === 'full' && !item.article));
-        if (duplicate) return { imported: false, duplicateId: duplicate.id, message: '같은 법령·시행일·공포일의 전문이 이미 있습니다.' };
+        // A re-fetched copy of an already published version replaces its text after
+        // review (the seeded text can differ from the current official response).
+        if (duplicate && duplicate.body === doc.body) return { imported: false, duplicateId: duplicate.id, message: '같은 법령·시행일·공포일의 전문이 이미 있고 본문도 같습니다.' };
+        if (duplicate) {
+          Object.assign(duplicate, { body: doc.body, bodyStatus: 'full', sourceUrl: doc.sourceUrl, documentNumber: doc.documentNumber || duplicate.documentNumber, verifiedAt: doc.verifiedAt, lastChecked: doc.lastChecked, collectedAt: doc.collectedAt, updatedAt: doc.updatedAt, notes: `${doc.notes} ${doc.verifiedAt?.slice(0, 10)} 공식 API 응답으로 같은 버전의 본문을 교체.` });
+          history(state, 'law-refresh', { documentId: duplicate.id, title: duplicate.title, reviewStatus: duplicate.reviewStatus });
+          return { imported: true, replaced: true, documentId: duplicate.id, message: `${doc.lawKey} 시행 ${doc.effectiveFrom} 본문을 공식 API 최신 응답으로 교체했습니다.` };
+        }
         state.documents.push(doc); history(state, 'law-import', { documentId: doc.id, title: doc.title, reviewStatus: doc.reviewStatus });
         return { imported: true, documentId: doc.id, message: `${doc.lawKey} 시행 ${doc.effectiveFrom} 전문을 공개했습니다.` };
       }),
@@ -319,8 +326,8 @@ export async function handleRequest(request, env, ctx, SEED, ASSETS) {
       }
       const localLaws = docs.filter(doc => ['law', 'decree', 'rule'].includes(doc.type) && (doc.tags || []).includes('지방세')), localFull = new Set(localLaws.filter(hasBody).map(doc => doc.lawKey || doc.lawName));
       const localSource = sources.find(item => item.id === 'local-tax');
-      if (localSource && localFull.size) { localSource.status = 'connected'; localSource.integrationNote = `지방세 법령 ${localFull.size}종 전문 수록(법제처 API 수집 후 검토·공개). 지방세 해석·결정례는 미수집.`; }
-      return reply({ sources, counts: { documents: docs.length, fullText: docs.filter(hasBody).length, links: docs.filter(doc => !hasBody(doc)).length, tax: docs.filter(doc => doc.domain === 'tax').length, subcontract: docs.filter(doc => doc.domain === 'subcontract').length, cases: docs.filter(doc => doc.type === 'case').length, collectedCases: docs.filter(doc => doc.collection === 'case-api').length, localTax: localLaws.length }, lastChecked: checked.at(-1) || null, aiEnabled: false, adminConfigured: Boolean(env.ADMIN_TOKEN || env.ADMIN_USER_ID || env.ADMIN_EMAIL), storageConfigured: Boolean(env.BUCKET), libraryMode: 'local', coverage: `검토 후 공개한 자료만 검색합니다. 공식 사이트 전체 수집 또는 최신성 보장은 지원하지 않습니다. ${localFull.size ? `지방세 법령 ${localFull.size}종은 전문, 지방세 해석·결정례는 미수집입니다.` : '지방세는 법령 공식 원문 링크만 수록했습니다.'}` });
+      if (localSource && localFull.size) { localSource.status = 'connected'; localSource.integrationNote = `지방세 법령·시행령·시행규칙 ${localFull.size}건 전문 수록(법제처 API 수집 후 검토·공개). 지방세 해석·결정례는 미수집.`; }
+      return reply({ sources, counts: { documents: docs.length, fullText: docs.filter(hasBody).length, links: docs.filter(doc => !hasBody(doc)).length, tax: docs.filter(doc => doc.domain === 'tax').length, subcontract: docs.filter(doc => doc.domain === 'subcontract').length, cases: docs.filter(doc => doc.type === 'case').length, collectedCases: docs.filter(doc => doc.collection === 'case-api').length, localTax: localLaws.length }, lastChecked: checked.at(-1) || null, aiEnabled: false, adminConfigured: Boolean(env.ADMIN_TOKEN || env.ADMIN_USER_ID || env.ADMIN_EMAIL), storageConfigured: Boolean(env.BUCKET), libraryMode: 'local', coverage: `검토 후 공개한 자료만 검색합니다. 공식 사이트 전체 수집 또는 최신성 보장은 지원하지 않습니다. ${localFull.size ? `지방세 법령·시행령·시행규칙 ${localFull.size}건은 전문, 지방세 해석·결정례는 미수집입니다.` : '지방세는 법령 공식 원문 링크만 수록했습니다.'}` });
     }
     const documentPath = path.match(/^\/api\/documents\/([^/]+)(\/download)?$/);
     if (method === 'GET' && documentPath) {
