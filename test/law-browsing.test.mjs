@@ -22,9 +22,9 @@ test('article records are presented under a law name without changing their sour
 test('integrated browsing collapses statute children and preserves cases and guides',()=>{
   const docs=searchDocuments(seed.documents).documents;
   const formal=docs.filter(d=>['law','decree','rule'].includes(d.type));
-  assert.equal(formal.length,19);
-  assert.equal(browser.lawCatalogGroups(formal).length,8);
-  assert.equal(browser.browseReferences(docs).length,8+docs.filter(d=>!['law','decree','rule'].includes(d.type)).length);
+  assert.equal(formal.length,23); // 19 statute records + 4 local-tax law links
+  assert.equal(browser.lawCatalogGroups(formal).length,12);
+  assert.equal(browser.browseReferences(docs).length,12+docs.filter(d=>!['law','decree','rule'].includes(d.type)).length);
   assert.equal(browser.browseReferences(docs).filter(d=>['guide','form','guideline'].includes(d.type)).length,seed.documents.filter(d=>['guide','form','guideline'].includes(d.type)).length);
   assert.equal(browser.browseReferences(docs).filter(d=>d.type==='case').length,seed.documents.filter(d=>d.type==='case').length);
 });
