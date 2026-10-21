@@ -1,11 +1,17 @@
 // API retrieval is deliberately separate from the reviewed public document store.
 export const LOCAL_TAX_LAWS = Object.freeze(['지방세기본법', '지방세법', '지방세특례제한법', '지방세징수법']);
+export const BASE_TAX_LAWS = Object.freeze(['국세기본법', '소득세법', '법인세법', '부가가치세법', '상속세 및 증여세법', '조세특례제한법', ...LOCAL_TAX_LAWS]);
+// 2026-10-21: every base tax law has both a 시행령 and a 시행규칙 in the official
+// list. 하도급법 has a 시행령 only (no 시행규칙 exists).
 export const LAW_UPDATE_SCOPE = Object.freeze([
   '국세기본법', '소득세법', '법인세법', '부가가치세법',
   '상속세 및 증여세법', '조세특례제한법',
   '하도급거래 공정화에 관한 법률', '하도급거래 공정화에 관한 법률 시행령',
   ...LOCAL_TAX_LAWS,
+  ...BASE_TAX_LAWS.flatMap(name => [`${name} 시행령`, `${name} 시행규칙`]),
 ]);
+const LAW_BATCH = 16;
+const isLocalTax = name => LOCAL_TAX_LAWS.some(base => name === base || name.startsWith(`${base} `));
 export const LAW_UPDATE_GUIDE = Object.freeze({
   applicationUrl: 'https://open.law.go.kr/',
   documentationUrl: 'https://open.law.go.kr/LSO/openApi/guideList.do',
@@ -19,6 +25,7 @@ export const LAW_UPDATE_GUIDE = Object.freeze({
 });
 const CONNECTION_KEY = 'law-api-connection-v1.json';
 const STATE_KEY = 'updates-law-state-v1.json';
+const LAW_CURSOR_KEY = 'updates-law-cursor-v1.json';
 const LAW_QUEUE_KEY = 'updates-laws-queue-v1.json';
 const CASE_STATE_KEY = 'updates-nts-cases-state-v1.json';
 const CASE_QUEUE_KEY = 'updates-nts-cases-queue-v1.json';
@@ -29,6 +36,8 @@ const CASE_LIMIT = 20;
 const CASE_QUEUE_LIMIT = 15000;
 const CASE_BODY_LIMIT = 16000;
 const LIMIT = 5 * 1024 * 1024;
+// Statute detail responses embed 별표 (tables/forms); enforcement rules reach ~12MB.
+const LAW_DETAIL_LIMIT = 24 * 1024 * 1024;
 const PROVIDER = '법제처 국가법령정보 공동활용';
 // Each track is one official list query. Bodies come only from the official
 // JSON detail service; 국세법령정보시스템 bodies are HTML-only and the API
@@ -112,17 +121,17 @@ async function boundedJson(request, maxBytes, message) {
 const smallJson = request => boundedJson(request, 4096, '연결 설정 요청이 너무 큽니다.');
 
 // Upstream text, URLs and exception messages may contain the OC; never echo them.
-async function fetchText(url, env, accept, label) {
+async function fetchText(url, env, accept, label, limit = LIMIT) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 20000);
   try {
     const upstream = await (env.LAW_API_FETCH || fetch)(url, { signal: controller.signal, headers: { Accept: accept }, redirect: 'manual' });
     if (upstream.status >= 300 && upstream.status < 400) throw fail(502, `${label}가 다른 주소로 이동을 요청했습니다 (HTTP ${upstream.status}). OC 승인 범위와 신청 시 등록한 도메인·IP를 확인하세요.`);
     if (!upstream.ok) throw fail(502, `${label} 응답 오류 (HTTP ${upstream.status})`);
-    if (Number(upstream.headers.get('content-length')) > LIMIT) throw fail(502, `${label} 응답이 허용 크기를 초과했습니다.`);
+    if (Number(upstream.headers.get('content-length')) > limit) throw fail(502, `${label} 응답이 허용 크기를 초과했습니다.`);
     const reader = upstream.body?.getReader(); if (!reader) throw fail(502, `${label} 본문이 없습니다.`);
     const decoder = new TextDecoder(); let size = 0, text = '';
-    while (true) { const part = await reader.read(); if (part.done) break; size += part.value.byteLength; if (size > LIMIT) { await reader.cancel(); throw fail(502, `${label} 응답이 허용 크기를 초과했습니다.`); } text += decoder.decode(part.value, { stream: true }); }
+    while (true) { const part = await reader.read(); if (part.done) break; size += part.value.byteLength; if (size > limit) { await reader.cancel(); throw fail(502, `${label} 응답이 허용 크기를 초과했습니다.`); } text += decoder.decode(part.value, { stream: true }); }
     return text + decoder.decode();
   } catch (cause) {
     if (cause.status) throw cause;
@@ -130,8 +139,8 @@ async function fetchText(url, env, accept, label) {
     throw fail(502, `${label} 연결 실패 · 서버에서 law.go.kr에 접속하지 못했습니다. 네트워크 차단 여부를 확인하세요.`);
   } finally { clearTimeout(timer); }
 }
-async function fetchJson(url, env) {
-  const text = await fetchText(url, env, 'application/json', '공식 API');
+async function fetchJson(url, env, limit = LIMIT) {
+  const text = await fetchText(url, env, 'application/json', '공식 API', limit);
   try { return JSON.parse(text); } catch {
     // law.go.kr answers unapproved OCs and unregistered servers with an HTML page.
     throw fail(502, /<html|<!doctype/i.test(text) ? '공식 API가 JSON 대신 안내 화면을 반환했습니다. OC 승인 여부와 신청 시 등록한 도메인·IP를 확인하세요.' : '공식 API JSON 형식을 확인할 수 없습니다. 승인·응답 형식을 확인하세요.');
@@ -342,7 +351,7 @@ export function lawBody(payload) {
   const root = payload?.법령, out = [];
   for (const unit of listOf(root?.조문?.조문단위)) {
     if (!unit || typeof unit !== 'object') continue;
-    if (unit.조문여부 === '전문') { const heading = trimmed(unit.조문내용); if (heading.length) out.push('', ...heading.map(line => '  ' + line)); continue; }
+    if (unit.조문여부 === '전문') { const heading = textLines(unit.조문내용).map(line => line.trimEnd()).filter(line => line.trim()); if (heading.length) out.push('', ...heading); continue; }
     out.push('', ...trimmed(unit.조문내용));
     for (const paragraph of listOf(unit.항)) {
       out.push(...trimmed(paragraph?.항내용));
@@ -358,7 +367,7 @@ export function lawBody(payload) {
 export function lawDocument(staged) {
   const basic = staged.payload?.법령?.기본정보 || staged.payload?.법령?.법령기본정보 || {};
   const name = staged.lawName, number = field(basic, ['공포번호']) || staged.promulgationNumber || '';
-  const effective = isoDate(staged.effectiveDate), promulgated = isoDate(staged.promulgatedDate), local = LOCAL_TAX_LAWS.includes(name);
+  const effective = isoDate(staged.effectiveDate), promulgated = isoDate(staged.promulgatedDate), local = isLocalTax(name);
   const type = /시행규칙$/.test(name) ? 'rule' : /시행령$/.test(name) ? 'decree' : 'law';
   const body = lawBody(staged.payload);
   if (!body || !/제\s*1\s*조/.test(body)) throw fail(502, '수집본에서 조문 본문을 만들지 못했습니다. 공개하지 않았습니다.');
@@ -374,18 +383,22 @@ export function lawDocument(staged) {
     allowedDownload: true, notes: 'API 원문 수집 후 관리자가 법령명·시행일·조문 구조를 검토하여 공개. 별표·서식 파일은 미포함.',
   };
 }
-async function collectLaws(env, oc, startedAt, helpers) {
+// `force` re-stages versions already published so their text can be compared
+// with the current official response and replaced after review.
+async function collectLaws(env, oc, startedAt, helpers, { names = LAW_UPDATE_SCOPE, force = false } = {}) {
   const staged = [], unchanged = [], errors = [];
   const published = helpers.publishedLawVersions ? await helpers.publishedLawVersions() : new Set();
-  for (const name of LAW_UPDATE_SCOPE) {
+  for (const name of names) {
     try {
       const search = new URL('https://www.law.go.kr/DRF/lawSearch.do');
       search.search = new URLSearchParams({ OC: oc, target: 'eflaw', type: 'JSON', nw: '3', search: '1', display: '100', query: name });
       const listing = validateSearch(await fetchJson(search, env), name);
-      if (published.has(`${name}|${isoDate(listing.effectiveDate)}|${isoDate(listing.promulgatedDate)}`)) { unchanged.push({ lawName: name, effectiveDate: listing.effectiveDate }); continue; }
+      if (!force && published.has(`${name}|${isoDate(listing.effectiveDate)}|${isoDate(listing.promulgatedDate)}`)) { unchanged.push({ lawName: name, effectiveDate: listing.effectiveDate }); continue; }
       const detail = new URL('https://www.law.go.kr/DRF/lawService.do');
       detail.search = new URLSearchParams({ OC: oc, target: 'eflaw', type: 'JSON', MST: listing.mst, efYd: listing.effectiveDate });
-      const payload = validateDetail(await fetchJson(detail, env), name, listing);
+      // Keep only what the body is built from; 별표 stay on the official site.
+      const full = validateDetail(await fetchJson(detail, env, LAW_DETAIL_LIMIT), name, listing);
+      const payload = { 법령: { 기본정보: full.법령.기본정보 || full.법령.법령기본정보, 조문: full.법령.조문, 부칙: full.법령.부칙 } };
       const sourceUrl = `https://www.law.go.kr/법령/${encodeURIComponent(name)}`;
       const key = `updates/laws/${startedAt.replace(/[:.]/g, '-')}/${listing.mst}-${listing.effectiveDate}.json`;
       await write(env.BUCKET, key, { reviewStatus: 'draft', validation: 'metadata-and-article-structure', retrievedAt: timestamp(), lawName: name, ...listing, sourceUrl, payload });
@@ -518,6 +531,7 @@ export async function handleLawUpdate(request, env, ctx, helpers = {}) {
       if (!scheduled) await requireAdmin(request, helpers);
       requireStorage(env);
       const body = await smallJson(request);
+      if (body.batch !== undefined && (!Number.isInteger(body.batch) || body.batch < 0 || body.batch * LAW_BATCH >= LAW_UPDATE_SCOPE.length)) throw fail(400, '법령 확인 묶음 번호를 확인하세요.');
       if (body.dataset && !['nts-cases', 'cases'].includes(body.dataset)) throw fail(400, '지원하는 수집 범위를 선택하세요.');
       const isCases = Boolean(body.dataset), stateKey = isCases ? CASE_STATE_KEY : STATE_KEY;
       const page = body.page ?? 1;
@@ -545,9 +559,18 @@ export async function handleLawUpdate(request, env, ctx, helpers = {}) {
           await write(env.BUCKET, stateKey, lastRun); return response({ ok: false, ...lastRun });
         }
       }
-      const result = await collectLaws(env, oc, startedAt, helpers);
+      // Laws are checked in batches so one request stays within the host's
+      // subrequest budget: the scheduler advances a stored cursor each weekday,
+      // and the admin screen walks the batches with an explicit `batch` index.
+      let names = LAW_UPDATE_SCOPE, batch = null;
+      if (scheduled) { const cursor = await read(env.BUCKET, LAW_CURSOR_KEY); batch = Number.isInteger(cursor?.next) && cursor.next < LAW_UPDATE_SCOPE.length ? cursor.next : 0; }
+      else if (Number.isInteger(body.batch)) batch = body.batch * LAW_BATCH;
+      if (batch !== null) names = LAW_UPDATE_SCOPE.slice(batch, batch + LAW_BATCH);
+      const result = await collectLaws(env, oc, startedAt, helpers, { names, force: !scheduled && body.force === true });
+      const following = batch !== null && batch + LAW_BATCH < LAW_UPDATE_SCOPE.length ? batch + LAW_BATCH : null;
+      if (scheduled) await write(env.BUCKET, LAW_CURSOR_KEY, { next: following ?? 0, updatedAt: timestamp() });
       const lawQueue = await read(env.BUCKET, LAW_QUEUE_KEY) || [];
-      const lastRun = { state: result.errors.length ? 'failed' : 'review-pending', startedAt, checkedAt: timestamp(), reviewPending: lawQueue.length, published: 0, staged: result.staged, unchanged: result.unchanged, errors: result.errors, message: result.staged.length ? '새 버전을 검토 대기로 보관했습니다. 자료 관리에서 확인 후 공개하세요. 공개 자료와 마지막 확인일은 변경하지 않았습니다.' : '확보한 버전과 같은 법령은 다시 저장하지 않았습니다.' };
+      const lastRun = { state: result.errors.length ? 'failed' : 'review-pending', startedAt, checkedAt: timestamp(), reviewPending: lawQueue.length, published: 0, checkedLaws: names.length, totalLaws: LAW_UPDATE_SCOPE.length, nextBatch: following === null ? null : following / LAW_BATCH, staged: result.staged, unchanged: result.unchanged, errors: result.errors, message: result.staged.length ? '새 버전 또는 다시 받은 본문을 검토 대기로 보관했습니다. 자료 관리에서 확인 후 공개하세요. 공개 자료와 마지막 확인일은 변경하지 않았습니다.' : '확보한 버전과 같은 법령은 다시 저장하지 않았습니다.' };
       if (scheduled) {
         // Daily pass over the most recent cases; the 2-year backfill runs from the admin screen.
         const recent = { from: new Date(Date.now() + 9 * 3600000 - 30 * 86400000).toISOString().slice(0, 10), to: kstToday() }, cases = [];

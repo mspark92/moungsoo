@@ -28,7 +28,7 @@ test('OC registration requires admin approval and encrypts the server-stored val
 test('official API-shaped fixtures stage every scoped law version, including local tax laws, while preserving public corpus',async()=>{
  const env=envFor();env.LAW_API_OC='approved-fixture-only';let calls=0;
  env.LAW_API_FETCH=async input=>{calls++;const u=new URL(input);if(u.pathname.endsWith('lawSearch.do')){const name=u.searchParams.get('query'),index=LAW_UPDATE_SCOPE.indexOf(name);return Response.json({LawSearch:{law:[{법령명한글:name,법령일련번호:String(1000+index),시행일자:'20260101',공포일자:'20250101'}]}})}const name=LAW_UPDATE_SCOPE[Number(u.searchParams.get('MST'))-1000];return Response.json({법령:{기본정보:{법령명_한글:name,시행일자:'20260101',공포일자:'20250101'},조문:{조문단위:[{조문번호:'1',조문내용:'격리된 조문 검증 본문'}]}}})};
- const result=await req('/api/updates/laws/run',env,'POST',{},admin);assert.equal(result.data.state,'review-pending');assert.equal(LAW_UPDATE_SCOPE.length,12);for(const name of LOCAL_TAX_LAWS)assert.ok(LAW_UPDATE_SCOPE.includes(name));assert.equal(result.data.reviewPending,LAW_UPDATE_SCOPE.length);assert.equal(result.data.published,0);assert.equal(calls,LAW_UPDATE_SCOPE.length*2);
+ const result=await req('/api/updates/laws/run',env,'POST',{},admin);assert.equal(result.data.state,'review-pending');assert.equal(LAW_UPDATE_SCOPE.length,32);assert.ok(LAW_UPDATE_SCOPE.includes('지방세법 시행규칙'));assert.ok(!LAW_UPDATE_SCOPE.includes('하도급거래 공정화에 관한 법률 시행규칙'));for(const name of LOCAL_TAX_LAWS)assert.ok(LAW_UPDATE_SCOPE.includes(name));assert.equal(result.data.reviewPending,LAW_UPDATE_SCOPE.length);assert.equal(result.data.published,0);assert.equal(calls,LAW_UPDATE_SCOPE.length*2);
  assert.equal((await req('/api/status',env)).data.counts.documents,seed.documents.length);
  assert.equal([...env.BUCKET.entries.keys()].filter(k=>k.startsWith('updates/laws/')).length,LAW_UPDATE_SCOPE.length);
 });
@@ -49,27 +49,28 @@ test('new reviewed seed cases merge into the existing store without reviving del
 
 // Synthetic statute in the eflaw JSON shape: chapter heading unit, article with
 // paragraph/item/sub-item, and a supplementary block given as nested arrays.
-const lawPayload=(name,overrides={})=>({법령:{기본정보:{법령명_한글:name,법령ID:'009999',공포번호:'12345',시행일자:'20270101',공포일자:'20261201'},조문:{조문단위:[{조문여부:'전문',조문내용:'제1장 총칙'},{조문번호:'1',조문여부:'조문',조문내용:'제1조(목적) 이 법은 격리된 시험 조문이다.'},{조문번호:'2',조문여부:'조문',조문내용:'제2조(정의)',항:[{항내용:'① 이 법에서 사용하는 용어의 뜻은 다음과 같다.',호:[{호내용:'1. "시험"이란 격리된 검증을 말한다.',목:[{목내용:['가. 첫째 목']}]}]},{항내용:'② 둘째 항이다.'}]}]},부칙:{부칙단위:[{부칙내용:[['부칙 <제12345호,2026.12.1>'],['이 법은 2027년 1월 1일부터 시행한다.']]}]},...overrides}});
+const lawPayload=(name,overrides={})=>({법령:{기본정보:{법령명_한글:name,법령ID:'009999',공포번호:'12345',시행일자:'20270101',공포일자:'20261201'},조문:{조문단위:[{조문여부:'전문',조문내용:'            제1장 총칙  '},{조문번호:'1',조문여부:'조문',조문내용:'제1조(목적) 이 법은 격리된 시험 조문이다.'},{조문번호:'2',조문여부:'조문',조문내용:'제2조(정의)',항:[{항내용:'① 이 법에서 사용하는 용어의 뜻은 다음과 같다.',호:[{호내용:'1. "시험"이란 격리된 검증을 말한다.',목:[{목내용:['가. 첫째 목']}]}]},{항내용:'② 둘째 항이다.'}]}]},부칙:{부칙단위:[{부칙내용:[['부칙 <제12345호,2026.12.1>'],['이 법은 2027년 1월 1일부터 시행한다.']]}]},...overrides}});
 test('statute JSON becomes the same body layout as the seeded full texts',()=>{
  const body=lawBody(lawPayload('지방세법'));
- assert.equal(body,'  제1장 총칙\n\n제1조(목적) 이 법은 격리된 시험 조문이다.\n\n제2조(정의)\n① 이 법에서 사용하는 용어의 뜻은 다음과 같다.\n1. "시험"이란 격리된 검증을 말한다.\n가. 첫째 목\n② 둘째 항이다.\n\n부칙 <제12345호,2026.12.1>\n이 법은 2027년 1월 1일부터 시행한다.');
+ assert.equal(body,'            제1장 총칙\n\n제1조(목적) 이 법은 격리된 시험 조문이다.\n\n제2조(정의)\n① 이 법에서 사용하는 용어의 뜻은 다음과 같다.\n1. "시험"이란 격리된 검증을 말한다.\n가. 첫째 목\n② 둘째 항이다.\n\n부칙 <제12345호,2026.12.1>\n이 법은 2027년 1월 1일부터 시행한다.');
 });
 test('reviewed local tax law versions publish as full text; unchanged published versions are not staged again',async()=>{
  const env=envFor();env.LAW_API_OC='approved-fixture-only';
  const seededVersions=Object.fromEntries(seed.documents.filter(d=>d.id.startsWith('api-law-')).map(d=>[d.lawKey,d]));
- env.LAW_API_FETCH=async input=>{const u=new URL(input);if(u.pathname.endsWith('lawSearch.do')){const name=u.searchParams.get('query'),known=seededVersions[name];return Response.json({LawSearch:{law:[{법령명한글:name,법령ID:'009999',법령일련번호:String(5000+LAW_UPDATE_SCOPE.indexOf(name)),시행일자:known?known.effectiveFrom.replaceAll('-',''):'20270101',공포일자:known?known.promulgatedAt.replaceAll('-',''):'20261201'}]}})}const name=LAW_UPDATE_SCOPE[Number(u.searchParams.get('MST'))-5000];return Response.json(lawPayload(name,{기본정보:{법령명_한글:name,법령ID:'009999',공포번호:'12345',시행일자:'20270101',공포일자:'20261201'}}))};
+ env.LAW_API_FETCH=async input=>{const u=new URL(input);if(u.pathname.endsWith('lawSearch.do')){const name=u.searchParams.get('query'),known=seededVersions[name];return Response.json({LawSearch:{law:[{법령명한글:name,법령ID:String(9000+LAW_UPDATE_SCOPE.indexOf(name)),법령일련번호:String(5000+LAW_UPDATE_SCOPE.indexOf(name)),시행일자:known?known.effectiveFrom.replaceAll('-',''):'20270101',공포일자:known?known.promulgatedAt.replaceAll('-',''):'20261201'}]}})}const name=LAW_UPDATE_SCOPE[Number(u.searchParams.get('MST'))-5000];return Response.json(lawPayload(name,{기본정보:{법령명_한글:name,법령ID:String(9000+LAW_UPDATE_SCOPE.indexOf(name)),공포번호:'12345',시행일자:'20270101',공포일자:'20261201'}}))};
  const result=(await req('/api/updates/laws/run',env,'POST',{},admin)).data;
- assert.equal(result.unchanged.length,8,'seeded versions are recognised');assert.deepEqual(result.staged.map(x=>x.lawName),[...LOCAL_TAX_LAWS]);
- const pending=(await req('/api/admin/laws/pending',env,'GET',undefined,admin)).data;assert.equal(pending.total,4);
+ assert.equal(result.unchanged.length,8,'seeded versions are recognised');assert.equal(result.staged.length,24);for(const name of LOCAL_TAX_LAWS)assert.ok(result.staged.some(x=>x.lawName===name));
+ const pending=(await req('/api/admin/laws/pending',env,'GET',undefined,admin)).data;assert.equal(pending.total,24);
  const target=pending.laws.find(x=>x.lawName==='지방세법');
  assert.equal((await req('/api/admin/laws/publish',env,'POST',{id:target.id},admin)).res.status,400);
  const published=(await req('/api/admin/laws/publish',env,'POST',{id:target.id,reviewConfirmed:true},admin)).data;assert.equal(published.imported,true);
  const doc=(await req('/api/documents/'+published.documentId,env)).data.document;
  assert.equal(doc.lawKey,'지방세법');assert.equal(doc.bodyStatus,'full');assert.equal(doc.effectiveFrom,'2027-01-01');assert.equal(doc.promulgatedAt,'2026-12-01');assert.ok(doc.tags.includes('지방세'));assert.equal(decodeURI(doc.sourceUrl),'https://www.law.go.kr/법령/지방세법/(20270101,12345,20261201)');
  const search=(await req('/api/search?'+new URLSearchParams({q:'지방세법 제2조 시험',category:'laws'}),env)).data;assert.ok(search.documents.some(d=>d.id===doc.id&&d.articleMatches.some(m=>m.article==='제2조')));
- assert.equal((await req('/api/admin/laws/pending',env,'GET',undefined,admin)).data.total,3);
- assert.match((await req('/api/status',env)).data.coverage,/지방세 법령 1종은 전문/);
- const again=(await req('/api/updates/laws/run',env,'POST',{},admin)).data;assert.ok(again.unchanged.some(x=>x.lawName==='지방세법'));assert.equal((await req('/api/admin/laws/pending',env,'GET',undefined,admin)).data.total,3);
+ assert.equal((await req('/api/admin/laws/pending',env,'GET',undefined,admin)).data.total,23);
+ const decree=pending.laws.find(x=>x.lawName==='지방세법 시행령');const decreeDoc=(await req('/api/documents/'+(await req('/api/admin/laws/publish',env,'POST',{id:decree.id,reviewConfirmed:true},admin)).data.documentId,env)).data.document;assert.equal(decreeDoc.type,'decree');assert.ok(decreeDoc.tags.includes('지방세'));assert.equal(decreeDoc.bodyStatus,'full');
+ assert.match((await req('/api/status',env)).data.coverage,/지방세 법령·시행령·시행규칙 2건은 전문/);
+ const again=(await req('/api/updates/laws/run',env,'POST',{},admin)).data;assert.ok(again.unchanged.some(x=>x.lawName==='지방세법'));assert.equal((await req('/api/admin/laws/pending',env,'GET',undefined,admin)).data.total,22);
 });
 const signingKey=createHash('sha256').update('isolated-holiday-test-only').digest('hex');
 function scheduledRequest(){const timestamp=String(Math.floor(Date.now()/1000)),digest=createHash('sha256').update('{}').digest('hex');const signature=createHmac('sha256',Buffer.from(signingKey,'hex')).update(`POST\n/api/updates/laws/run\n${timestamp}\n${digest}`).digest('hex');return new Request('https://reference.test/api/updates/laws/run',{method:'POST',headers:{'content-type':'application/json','X-Law-Update-Timestamp':timestamp,'X-Law-Update-Signature':signature},body:'{}'})}
@@ -92,4 +93,39 @@ test('without a holiday key the weekday run proceeds and status says holidays ar
  env.HOLIDAY_API_KEY='isolated-holiday-key';env.HOLIDAY_API_FETCH=async()=>new Response('<html>error</html>');
  const check=await holidayCheck(env);assert.equal(check.holiday,false);assert.match(check.error,/특일 정보/);
  assert.equal((await handleRequest(scheduledRequest(),env,{},seed,{}).then(r=>r.json())).state,'blocked');
+});
+
+test('laws are checked in batches: the admin walks batch indexes and the scheduler advances a stored cursor',async()=>{
+ const env=envFor();env.LAW_API_OC='approved-fixture-only';env.LAW_UPDATE_SIGNING_KEY=signingKey;const queried=[];
+ env.LAW_API_FETCH=async input=>{const u=new URL(input);if(u.pathname.endsWith('lawSearch.do')){const name=u.searchParams.get('query');queried.push(name);return Response.json({LawSearch:{law:[]}})}throw Error('no detail expected')};
+ const first=(await req('/api/updates/laws/run',env,'POST',{batch:0},admin)).data;assert.equal(first.checkedLaws,16);assert.equal(first.nextBatch,1);
+ const second=(await req('/api/updates/laws/run',env,'POST',{batch:1},admin)).data;assert.equal(second.checkedLaws,16);assert.equal(second.nextBatch,null);
+ assert.deepEqual(queried,[...LAW_UPDATE_SCOPE]);
+ assert.equal((await req('/api/updates/laws/run',env,'POST',{batch:2},admin)).res.status,400);
+ queried.length=0;await handleRequest(scheduledRequest(),env,{},seed,{});assert.deepEqual(queried.filter(n=>LAW_UPDATE_SCOPE.includes(n)),LAW_UPDATE_SCOPE.slice(0,16));
+ queried.length=0;await handleRequest(scheduledRequest(),env,{},seed,{});assert.deepEqual(queried.filter(n=>LAW_UPDATE_SCOPE.includes(n)),LAW_UPDATE_SCOPE.slice(16));
+ queried.length=0;await handleRequest(scheduledRequest(),env,{},seed,{});assert.deepEqual(queried.filter(n=>LAW_UPDATE_SCOPE.includes(n)),LAW_UPDATE_SCOPE.slice(0,16),'cursor wraps around');
+});
+test('a forced refresh re-stages a published version and review replaces only differing text',async()=>{
+ const env=envFor();env.LAW_API_OC='approved-fixture-only';
+ const seeded=seed.documents.find(d=>d.id==='api-law-001586-20260929-20261002');
+ const official=lawPayload('국세기본법',{기본정보:{법령명_한글:'국세기본법',법령ID:'001586',공포번호:seeded.documentNumber,시행일자:'20261002',공포일자:'20260929'}});
+ env.LAW_API_FETCH=async input=>{const u=new URL(input);if(u.pathname.endsWith('lawSearch.do')){const name=u.searchParams.get('query');return Response.json({LawSearch:{law:name==='국세기본법'?[{법령명한글:name,법령ID:'001586',법령일련번호:'7001',시행일자:'20261002',공포일자:'20260929'}]:[]}})}return Response.json(official)};
+ const normal=(await req('/api/updates/laws/run',env,'POST',{batch:0},admin)).data;assert.equal(normal.staged.length,0);assert.ok(normal.unchanged.some(x=>x.lawName==='국세기본법'));
+ assert.equal((await req('/api/updates/laws/run',env,'POST',{batch:0,force:true},{})).res.status,401);
+ const forced=(await req('/api/updates/laws/run',env,'POST',{batch:0,force:true},admin)).data;assert.deepEqual(forced.staged.map(x=>x.lawName),['국세기본법']);
+ const [entry]=(await req('/api/admin/laws/pending',env,'GET',undefined,admin)).data.laws;
+ const replaced=(await req('/api/admin/laws/publish',env,'POST',{id:entry.id,reviewConfirmed:true},admin)).data;assert.equal(replaced.replaced,true);assert.equal(replaced.documentId,seeded.id);
+ const doc=(await req('/api/documents/'+seeded.id,env)).data.document;assert.equal(doc.body,lawBody(official));assert.equal(doc.effectiveFrom,'2026-10-02');
+ assert.equal((await req('/api/status',env)).data.counts.documents,seed.documents.length,'no duplicate record');
+ await req('/api/updates/laws/run',env,'POST',{batch:0,force:true},admin);const [again]=(await req('/api/admin/laws/pending',env,'GET',undefined,admin)).data.laws;
+ assert.equal((await req('/api/admin/laws/publish',env,'POST',{id:again.id,reviewConfirmed:true},admin)).data.imported,false,'identical text is not rewritten');
+});
+test('large statute responses are accepted and stored without 별표 attachments',async()=>{
+ const env=envFor();env.LAW_API_OC='approved-fixture-only';const name='소득세법 시행규칙';
+ const payload=lawPayload(name,{기본정보:{법령명_한글:name,법령ID:'9100',공포번호:'1',시행일자:'20270101',공포일자:'20261201'},별표:{별표단위:[{별표내용:'표'.repeat(2_200_000)}]}});
+ env.LAW_API_FETCH=async input=>{const u=new URL(input);if(u.pathname.endsWith('lawSearch.do')){const q=u.searchParams.get('query');return Response.json({LawSearch:{law:q===name?[{법령명한글:name,법령ID:'9100',법령일련번호:'8001',시행일자:'20270101',공포일자:'20261201'}]:[]}})}const text=JSON.stringify(payload);assert.ok(Buffer.byteLength(text)>5*1024*1024);return new Response(text)};
+ const result=(await req('/api/updates/laws/run',env,'POST',{batch:Math.floor(LAW_UPDATE_SCOPE.indexOf(name)/16)},admin)).data;
+ assert.deepEqual(result.staged.map(x=>x.lawName),[name]);
+ const stored=env.BUCKET.entries.get(result.staged[0].key).value;assert.ok(!stored.includes('별표'));assert.ok(stored.length<100000);
 });
