@@ -141,10 +141,18 @@ async function fetchText(url, env, accept, label, limit = LIMIT) {
 }
 async function fetchJson(url, env, limit = LIMIT) {
   const text = await fetchText(url, env, 'application/json', '공식 API', limit);
-  try { return JSON.parse(text); } catch {
+  let payload;
+  try { payload = JSON.parse(text); } catch {
     // law.go.kr answers unapproved OCs and unregistered servers with an HTML page.
     throw fail(502, /<html|<!doctype/i.test(text) ? '공식 API가 JSON 대신 안내 화면을 반환했습니다. OC 승인 여부와 신청 시 등록한 도메인·IP를 확인하세요.' : '공식 API JSON 형식을 확인할 수 없습니다. 승인·응답 형식을 확인하세요.');
   }
+  // Rejections arrive as {"result": ..., "msg": ...}; e.g. a server whose IP is
+  // not registered for the OC. Show the official wording, never the OC itself.
+  if (payload && typeof payload.result === 'string' && typeof payload.msg === 'string' && !payload.PrecSearch && !payload.LawSearch && !payload.법령 && !payload.PrecService) {
+    const clean = value => value.replace(/OC=[^&\s"]*/gi, 'OC=…').slice(0, 200);
+    throw fail(502, `법제처 응답: ${clean(payload.result)} ${clean(payload.msg)}${/IP|도메인|사용자 정보/.test(payload.result + payload.msg) ? ' · 이 서버의 IP가 OC에 등록되지 않았습니다. 내 PC에서 수집한 파일을 올리세요.' : ''}`);
+  }
+  return payload;
 }
 
 // ---------------------------------------------------------------------------
@@ -385,28 +393,41 @@ export function lawDocument(staged) {
 }
 // `force` re-stages versions already published so their text can be compared
 // with the current official response and replaced after review.
+export async function fetchLawListing(env, oc, name) {
+  const search = new URL('https://www.law.go.kr/DRF/lawSearch.do');
+  search.search = new URLSearchParams({ OC: oc, target: 'eflaw', type: 'JSON', nw: '3', search: '1', display: '100', query: name });
+  return validateSearch(await fetchJson(search, env), name);
+}
+// Keep only what the body is built from; 별표 stay on the official site.
+export async function fetchLawPayload(env, oc, name, listing) {
+  const detail = new URL('https://www.law.go.kr/DRF/lawService.do');
+  detail.search = new URLSearchParams({ OC: oc, target: 'eflaw', type: 'JSON', MST: listing.mst, efYd: listing.effectiveDate });
+  const full = validateDetail(await fetchJson(detail, env, LAW_DETAIL_LIMIT), name, listing);
+  return { 법령: { 기본정보: full.법령.기본정보 || full.법령.법령기본정보, 조문: full.법령.조문, 부칙: full.법령.부칙 } };
+}
+async function stageLaws(env, entries, startedAt) {
+  const staged = [];
+  for (const { lawName, listing, payload, retrievedAt } of entries) {
+    const key = `updates/laws/${startedAt.replace(/[:.]/g, '-')}/${listing.mst}-${listing.effectiveDate}.json`;
+    await write(env.BUCKET, key, { reviewStatus: 'draft', validation: 'metadata-and-article-structure', retrievedAt: retrievedAt || timestamp(), lawName, ...listing, sourceUrl: `https://www.law.go.kr/법령/${encodeURIComponent(lawName)}`, payload });
+    staged.push({ lawName, mst: listing.mst, effectiveDate: listing.effectiveDate, promulgatedDate: listing.promulgatedDate, key });
+  }
+  if (staged.length) await mutateLawQueue(env.BUCKET, current => [...current.filter(item => !staged.some(entry => entry.lawName === item.lawName && entry.effectiveDate === item.effectiveDate && entry.promulgatedDate === item.promulgatedDate)), ...staged]);
+  return staged;
+}
+// `force` re-stages versions already published so their text can be compared
+// with the current official response and replaced after review.
 async function collectLaws(env, oc, startedAt, helpers, { names = LAW_UPDATE_SCOPE, force = false } = {}) {
-  const staged = [], unchanged = [], errors = [];
+  const fetched = [], unchanged = [], errors = [];
   const published = helpers.publishedLawVersions ? await helpers.publishedLawVersions() : new Set();
   for (const name of names) {
     try {
-      const search = new URL('https://www.law.go.kr/DRF/lawSearch.do');
-      search.search = new URLSearchParams({ OC: oc, target: 'eflaw', type: 'JSON', nw: '3', search: '1', display: '100', query: name });
-      const listing = validateSearch(await fetchJson(search, env), name);
+      const listing = await fetchLawListing(env, oc, name);
       if (!force && published.has(`${name}|${isoDate(listing.effectiveDate)}|${isoDate(listing.promulgatedDate)}`)) { unchanged.push({ lawName: name, effectiveDate: listing.effectiveDate }); continue; }
-      const detail = new URL('https://www.law.go.kr/DRF/lawService.do');
-      detail.search = new URLSearchParams({ OC: oc, target: 'eflaw', type: 'JSON', MST: listing.mst, efYd: listing.effectiveDate });
-      // Keep only what the body is built from; 별표 stay on the official site.
-      const full = validateDetail(await fetchJson(detail, env, LAW_DETAIL_LIMIT), name, listing);
-      const payload = { 법령: { 기본정보: full.법령.기본정보 || full.법령.법령기본정보, 조문: full.법령.조문, 부칙: full.법령.부칙 } };
-      const sourceUrl = `https://www.law.go.kr/법령/${encodeURIComponent(name)}`;
-      const key = `updates/laws/${startedAt.replace(/[:.]/g, '-')}/${listing.mst}-${listing.effectiveDate}.json`;
-      await write(env.BUCKET, key, { reviewStatus: 'draft', validation: 'metadata-and-article-structure', retrievedAt: timestamp(), lawName: name, ...listing, sourceUrl, payload });
-      staged.push({ lawName: name, mst: listing.mst, effectiveDate: listing.effectiveDate, promulgatedDate: listing.promulgatedDate, key });
+      fetched.push({ lawName: name, listing, payload: await fetchLawPayload(env, oc, name, listing) });
     } catch (cause) { errors.push({ lawName: name, message: cause.status ? cause.message : '자료 수집·저장에 실패했습니다.' }); }
   }
-  if (staged.length) await mutateLawQueue(env.BUCKET, current => [...current.filter(item => !staged.some(entry => entry.lawName === item.lawName && entry.effectiveDate === item.effectiveDate && entry.promulgatedDate === item.promulgatedDate)), ...staged]);
-  return { staged, unchanged, errors };
+  return { staged: await stageLaws(env, fetched, startedAt), unchanged, errors };
 }
 
 // ---------------------------------------------------------------------------
@@ -433,7 +454,7 @@ async function runCaseCollection(env, oc, body, startedAt, helpers, prior, { rec
 
 export async function handleLawUpdate(request, env, ctx, helpers = {}) {
   const path = new URL(request.url).pathname;
-  const routes = ['/api/updates/status', '/api/admin/law-connection', '/api/updates/laws/run', '/api/admin/updates/run', '/api/admin/cases/pending', '/api/admin/cases/import', '/api/admin/cases/import-batch', '/api/admin/cases/discard', '/api/admin/cases/stage', '/api/admin/laws/pending', '/api/admin/laws/publish', '/api/admin/holidays'];
+  const routes = ['/api/updates/status', '/api/admin/law-connection', '/api/updates/laws/run', '/api/admin/updates/run', '/api/admin/cases/pending', '/api/admin/cases/import', '/api/admin/cases/import-batch', '/api/admin/cases/discard', '/api/admin/cases/stage', '/api/admin/laws/pending', '/api/admin/laws/publish', '/api/admin/laws/stage', '/api/admin/holidays'];
   if (!routes.includes(path)) return null;
   try {
     if (path.startsWith('/api/admin/cases/')) {
@@ -492,6 +513,20 @@ export async function handleLawUpdate(request, env, ctx, helpers = {}) {
       await requireAdmin(request, helpers); requireStorage(env);
       const queue = await read(env.BUCKET, LAW_QUEUE_KEY) || [];
       if (request.method === 'GET' && path.endsWith('/pending')) return response({ laws: queue.map(({ key, ...entry }) => ({ ...entry, id: key })), total: queue.length });
+      // One law per request from scripts/collect-laws.mjs. The payload is checked
+      // exactly as a live collection is, so a file cannot stage anything else.
+      if (request.method === 'POST' && path.endsWith('/stage')) {
+        const body = await boundedJson(request, 24 * 1024 * 1024, '법령 수집 파일 한 건이 너무 큽니다.');
+        const law = body.law;
+        if (body.format !== 'law-api-laws-v1' || !law || typeof law !== 'object' || !LAW_UPDATE_SCOPE.includes(law.lawName)) throw fail(400, 'scripts/collect-laws.mjs로 만든 법령 수집 파일이 아닙니다.');
+        const listing = { mst: String(law.mst || ''), lawId: String(law.lawId || ''), effectiveDate: String(law.effectiveDate || ''), promulgatedDate: String(law.promulgatedDate || ''), promulgationNumber: String(law.promulgationNumber || '') };
+        if (!/^\d+$/.test(listing.mst) || !legalDate(listing.effectiveDate) || !legalDate(listing.promulgatedDate)) throw fail(400, '법령 일련번호·시행일·공포일을 확인하세요.');
+        const payload = validateDetail(law.payload, law.lawName, listing);
+        lawDocument({ lawName: law.lawName, ...listing, retrievedAt: timestamp(), payload });
+        const retrievedAt = typeof law.retrievedAt === 'string' && !Number.isNaN(Date.parse(law.retrievedAt)) ? law.retrievedAt : timestamp();
+        const [staged] = await stageLaws(env, [{ lawName: law.lawName, listing, payload: { 법령: { 기본정보: payload.법령.기본정보 || payload.법령.법령기본정보, 조문: payload.법령.조문, 부칙: payload.법령.부칙 } }, retrievedAt }], timestamp());
+        return response({ staged: true, lawName: staged.lawName, effectiveDate: staged.effectiveDate, message: `${staged.lawName}(시행 ${isoDate(staged.effectiveDate)})을 검토 대기로 올렸습니다.` });
+      }
       if (request.method === 'POST' && path.endsWith('/publish')) {
         const body = await smallJson(request), entry = queue.find(item => item.key === body.id);
         if (!entry || body.reviewConfirmed !== true) throw fail(400, '검토 대기 법령과 시행일·부칙 확인이 필요합니다.');
