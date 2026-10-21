@@ -129,3 +129,26 @@ test('large statute responses are accepted and stored without 별표 attachments
  assert.deepEqual(result.staged.map(x=>x.lawName),[name]);
  const stored=env.BUCKET.entries.get(result.staged[0].key).value;assert.ok(!stored.includes('별표'));assert.ok(stored.length<100000);
 });
+test('an IP rejection from law.go.kr is shown in official words without the OC',async()=>{
+ const env=envFor();env.LAW_API_OC='approved-fixture-only';
+ env.LAW_API_FETCH=async()=>Response.json({result:'사용자 정보 검증에 실패하였습니다.',msg:'OPEN API 호출 시 사용자 검증을 위하여 정확한 서버장비의 IP주소 및 도메인주소를 등록해 주세요. OC=approved-fixture-only'});
+ const result=(await req('/api/updates/laws/run',env,'POST',{batch:0},admin)).data;
+ assert.match(result.errors[0].message,/법제처 응답: 사용자 정보 검증에 실패/);assert.match(result.errors[0].message,/내 PC에서 수집한 파일/);
+ assert.ok(!JSON.stringify(result).includes('approved-fixture-only'));
+});
+test('law files from collect-laws stage only validated statutes in scope',async()=>{
+ const env=envFor(),name='지방세법 시행령';
+ const law={lawName:name,mst:'8100',lawId:'9200',effectiveDate:'20270101',promulgatedDate:'20261201',promulgationNumber:'1',retrievedAt:'2026-10-21T00:00:00.000Z',payload:lawPayload(name,{기본정보:{법령명_한글:name,법령ID:'9200',공포번호:'1',시행일자:'20270101',공포일자:'20261201'}})};
+ const stage=body=>req('/api/admin/laws/stage',env,'POST',body,admin);
+ assert.equal((await req('/api/admin/laws/stage',env,'POST',{format:'law-api-laws-v1',law})).res.status,401);
+ assert.equal((await stage({format:'other',law})).res.status,400);
+ assert.equal((await stage({format:'law-api-laws-v1',law:{...law,lawName:'임의의 법'}})).res.status,400);
+ assert.equal((await stage({format:'law-api-laws-v1',law:{...law,effectiveDate:'20270230'}})).res.status,400);
+ assert.equal((await stage({format:'law-api-laws-v1',law:{...law,effectiveDate:'20260101'}})).res.status,502,'payload dates must match');
+ assert.equal((await stage({format:'law-api-laws-v1',law:{...law,payload:lawPayload('지방세법')}})).res.status,502,'payload name must match');
+ const ok=await stage({format:'law-api-laws-v1',law:{...law,payload:{법령:{...law.payload.법령,별표:{x:'큰 별표'}}}}});assert.equal(ok.res.status,200);
+ const [entry]=(await req('/api/admin/laws/pending',env,'GET',undefined,admin)).data.laws;assert.equal(entry.lawName,name);
+ assert.ok(!env.BUCKET.entries.get(entry.id).value.includes('큰 별표'));
+ const published=(await req('/api/admin/laws/publish',env,'POST',{id:entry.id,reviewConfirmed:true},admin)).data;
+ const doc=(await req('/api/documents/'+published.documentId,env)).data.document;assert.equal(doc.type,'decree');assert.equal(doc.effectiveFrom,'2027-01-01');assert.match(doc.body,/제2조\(정의\)/);
+});

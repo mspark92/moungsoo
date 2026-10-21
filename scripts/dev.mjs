@@ -28,7 +28,7 @@ const server=createServer(async(incoming,outgoing)=>{
  try{
   if(incoming.headers.host!==`127.0.0.1:${listeningPort}`&&incoming.headers.host!==`localhost:${listeningPort}`){outgoing.writeHead(400);outgoing.end('Use the printed loopback URL.');return;}
   const headers=new Headers();for(const [name,value]of Object.entries(incoming.headers)){if(/^oai-|^x-forwarded-|^cf-/i.test(name)||value===undefined)continue;headers.set(name,Array.isArray(value)?value.join(','):value);}
-  const chunks=[];let size=0;for await(const chunk of incoming){size+=chunk.length;if(size>2*1024*1024){outgoing.writeHead(413);outgoing.end('Request body exceeds 2 MB.');return;}chunks.push(chunk);}
+  const chunks=[];let size=0;for await(const chunk of incoming){size+=chunk.length;if(size>32*1024*1024){outgoing.writeHead(413);outgoing.end('Request body exceeds 32 MB.');return;}chunks.push(chunk);}
   const body=Buffer.concat(chunks),method=incoming.method||'GET';
   const request=new Request(`http://${incoming.headers.host}${incoming.url||'/'}`,{method,headers,...(body.length&&!['GET','HEAD'].includes(method)?{body}: {})});
   // Read source assets on each request so edits appear after a browser refresh.
