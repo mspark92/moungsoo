@@ -6,7 +6,8 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node --test test/*.test.mjs",
-    "dev": "node --env-file-if-exists=.env scripts/dev.mjs"
+    "dev": "node --env-file-if-exists=.env scripts/dev.mjs",
+    "collect:cases": "node --env-file-if-exists=.env scripts/collect-cases.mjs"
   },
   "engines": {
     "node": ">=24"

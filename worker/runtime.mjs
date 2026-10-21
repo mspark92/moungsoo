@@ -34,10 +34,10 @@ function duplicateVersion(a, b) {
 }
 function sanitizeDocument(input, prior = {}) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw error(400, '문서 메타데이터를 확인하세요.');
-  const allowed = ['title', 'domain', 'type', 'agency', 'sourceUrl', 'documentNumber', 'article', 'body', 'bodyStatus', 'promulgatedAt', 'effectiveFrom', 'effectiveTo', 'documentDate', 'tags', 'keywords', 'rights', 'version', 'transitional', 'reviewStatus', 'allowedDownload', 'lawKey', 'lawName', 'status', 'taxYears', 'taxYear', 'relatedIds', 'notes', 'applicability', 'sourceId', 'verifiedAt', 'lastChecked'];
+  const allowed = ['title', 'domain', 'type', 'agency', 'sourceUrl', 'documentNumber', 'article', 'body', 'bodyStatus', 'promulgatedAt', 'effectiveFrom', 'effectiveTo', 'documentDate', 'tags', 'keywords', 'rights', 'version', 'transitional', 'reviewStatus', 'allowedDownload', 'lawKey', 'lawName', 'status', 'taxYears', 'taxYear', 'relatedIds', 'notes', 'applicability', 'sourceId', 'verifiedAt', 'lastChecked', 'collection', 'caseTrack', 'caseKind'];
   const doc = { ...prior };
   for (const key of allowed) if (Object.hasOwn(input, key)) doc[key] = input[key];
-  for (const key of ['title', 'domain', 'type', 'agency', 'sourceUrl', 'documentNumber', 'article', 'body', 'bodyStatus', 'rights', 'version', 'transitional', 'reviewStatus', 'lawKey', 'lawName', 'status', 'notes', 'applicability', 'sourceId']) if (doc[key] !== undefined && typeof doc[key] !== 'string') throw error(400, `${key} 값은 문자열이어야 합니다.`);
+  for (const key of ['title', 'domain', 'type', 'agency', 'sourceUrl', 'documentNumber', 'article', 'body', 'bodyStatus', 'rights', 'version', 'transitional', 'reviewStatus', 'lawKey', 'lawName', 'status', 'notes', 'applicability', 'sourceId', 'collection', 'caseTrack', 'caseKind']) if (doc[key] !== undefined && typeof doc[key] !== 'string') throw error(400, `${key} 값은 문자열이어야 합니다.`);
   if (!doc.title?.trim() || !['tax', 'subcontract'].includes(doc.domain) || !TYPES.has(doc.type) || !doc.agency?.trim()) throw error(400, '제목, 분야, 자료 유형, 발행기관을 입력하세요.');
   if (doc.title.length > 500 || (doc.body || '').length > MAX_BODY / 2) throw error(400, '제목 또는 본문이 허용 크기를 초과했습니다.');
   for (const key of DATE_FIELDS) if (doc[key] && !validDate(doc[key])) throw error(400, `${key} 날짜를 확인하세요.`);
@@ -81,10 +81,26 @@ async function jsonBody(request) {
 function initialState(seed) {
   return { version: 1, seedIds: (seed.documents || []).map(doc=>doc.id), documents: (seed.documents || []).filter(doc => doc.id).map(input => ({ body: '', bodyStatus: 'link', tags: [], reviewStatus: 'published', ...input, verifiedAt: input.verifiedAt || input.lastChecked || input.collectedAt || null })), sources: (seed.sources || []).filter(source => source.id).map(source => ({ status: 'unconnected', ...source })), history: [] };
 }
-async function readState(env, seed) {
-  if (!env.BUCKET) return initialState(seed);
+// Read-only requests reuse the parsed store while its R2 etag is unchanged. The
+// cached object is never handed to mutate(), which always reads a fresh copy.
+let stateCache = null;
+const publicCache = new WeakMap();
+function publicDocuments(state) {
+  if (!publicCache.has(state)) publicCache.set(state, state.documents.map(scrubDocument));
+  return publicCache.get(state);
+}
+async function readState(env, seed, { cached = false } = {}) {
+  if (!env.BUCKET) {
+    if (!cached) return initialState(seed);
+    if (stateCache?.seed !== seed || stateCache.etag !== null) stateCache = { seed, etag: null, state: initialState(seed) };
+    return stateCache.state;
+  }
   try {
-    const object = await env.BUCKET.get(STATE_KEY); if (!object) return initialState(seed);
+    const reuse = cached && stateCache?.seed === seed && stateCache.etag;
+    const object = await env.BUCKET.get(STATE_KEY, reuse ? { onlyIf: { etagDoesNotMatch: stateCache.etag } } : undefined);
+    if (reuse && object && typeof object.json !== 'function') return stateCache.state;
+    if (!object) return initialState(seed);
+    if (reuse && object.etag === stateCache.etag) return stateCache.state;
     const state = await object.json();
     if (state.version !== 1 || !Array.isArray(state.documents) || !Array.isArray(state.sources) || !Array.isArray(state.history)) throw new Error('invalid-state');
     const knownSeedIds = new Set(state.seedIds || seed.baselineIds || []);
@@ -101,6 +117,7 @@ async function readState(env, seed) {
     for (const source of seed.sources || []) if (source.id && !state.sources.some(item=>item.id===source.id)) state.sources.push(structuredClone(source));
     if(seed.apiLawImportAt && (!state.apiLawImportAt || state.apiLawImportAt < seed.apiLawImportAt)){for(const source of seed.sources.filter(x=>x.id==='law-open-data')){const index=state.sources.findIndex(x=>x.id===source.id);if(index>=0)state.sources[index]={...state.sources[index],...source};}state.apiLawImportAt=seed.apiLawImportAt;}
     Object.defineProperty(state, '_storageEtag', { value: object.etag, enumerable: false });
+    if (cached) stateCache = { seed, etag: object.etag, state };
     return state;
   } catch { throw error(503, '자료 저장소를 읽지 못했습니다. 관리자에게 연결 상태를 확인하세요.'); }
 }
@@ -111,6 +128,7 @@ async function mutate(env, seed, operation) {
     const state = await readState(env, seed); const result = await operation(state);
     try {
       const saved = await env.BUCKET.put(STATE_KEY, JSON.stringify(state), { httpMetadata: { contentType: 'application/json' }, onlyIf: state._storageEtag ? { etagMatches: state._storageEtag } : { etagDoesNotMatch: '*' } });
+      stateCache = null;
       if (saved === null) throw error(409, '다른 관리 요청이 먼저 저장되었습니다. 자료를 다시 확인한 뒤 시도하세요.');
     } catch (cause) { if (cause.status) throw cause; throw error(503, '자료 저장에 실패했습니다. 변경 내용은 저장되지 않았습니다. 다시 시도하세요.'); }
     return result;
@@ -147,6 +165,30 @@ async function authState(request, env) {
   const authMethod = !env.BUCKET ? null : platformAuthenticated(request, env) ? 'platform' : await cookieAuthenticated(request, env.ADMIN_TOKEN) ? 'token' : null;
   return { authenticated: Boolean(authMethod), configured, storageConfigured: Boolean(env.BUCKET), authMethod };
 }
+const hasBody = doc => ['full', 'excerpt'].includes(doc.bodyStatus) && Boolean(doc.body);
+// Batch publication of reviewed cases in one store write. A full-text court
+// version upgrades an existing link-only record of the same court, docket and
+// date; anything else with that identity is reported as a duplicate.
+function importCases(state, inputs) {
+  const results = [], summary = { imported: 0, upgraded: 0, duplicates: 0, rejected: 0 };
+  const byIdentity = new Map(), byId = new Map(state.documents.map(item => [item.id, item]));
+  for (const item of state.documents) if (item.type === 'case') byIdentity.set(`${item.agency}|${item.documentNumber}|${item.documentDate}`, item);
+  for (const input of inputs) {
+    let doc;
+    try { doc = sanitizeDocument({ ...input, reviewStatus: 'published' }); doc.id = input.id; }
+    catch (cause) { summary.rejected++; results.push({ imported: false, id: input?.id || null, message: cause.message }); continue; }
+    const identity = `${doc.agency}|${doc.documentNumber}|${doc.documentDate}`, duplicate = byId.get(doc.id) || byIdentity.get(identity);
+    if (duplicate && !hasBody(duplicate) && hasBody(doc)) {
+      Object.assign(duplicate, { body: doc.body, bodyStatus: doc.bodyStatus, sourceUrl: doc.sourceUrl, rights: doc.rights, notes: doc.notes, version: doc.version, updatedAt: doc.updatedAt, keywords: [...new Set([...(duplicate.keywords || []), ...(doc.keywords || [])])].slice(0, 100), tags: [...new Set([...(duplicate.tags || []), ...(doc.tags || [])])].slice(0, 100) });
+      summary.upgraded++; results.push({ imported: true, upgraded: true, documentId: duplicate.id, message: '기존 링크 자료에 공식 판결문 본문을 보강했습니다.' }); continue;
+    }
+    if (duplicate) { summary.duplicates++; results.push({ imported: false, duplicateId: duplicate.id, message: '같은 법원·사건번호·선고일의 자료가 이미 있습니다. 기존 자료를 확인하세요.' }); continue; }
+    state.documents.push(doc); byId.set(doc.id, doc); byIdentity.set(identity, doc);
+    summary.imported++; results.push({ imported: true, documentId: doc.id, message: '검토한 판례를 공개 자료에 등록했습니다.' });
+  }
+  if (summary.imported || summary.upgraded) history(state, 'case-import', inputs.length === 1 ? { documentId: results[0].documentId, title: inputs[0].title, reviewStatus: 'published' } : { count: summary.imported, upgraded: summary.upgraded, duplicates: summary.duplicates, reviewStatus: 'published' });
+  return { results, summary };
+}
 const sessionCookie = (value, maxAge = 28800) => `legal_admin=${value}; HttpOnly; Secure; SameSite=Strict; Path=/api/admin; Max-Age=${maxAge}`;
 
 export async function handleRequest(request, env, ctx, SEED, ASSETS) {
@@ -162,7 +204,7 @@ export async function handleRequest(request, env, ctx, SEED, ASSETS) {
       if (contentType && !/^application\/json(?:\s*;|$)/i.test(contentType)) throw error(415, 'JSON 요청만 지원합니다.');
     }
     if (method === 'GET' && path === '/api/updates/instructions') return reply({
-      revision: 'weekday-9-kst-signed-v2', scope: '등록된 주요 세법 6종과 하도급법·시행령',
+      revision: 'weekday-9-kst-signed-v3', scope: '등록된 주요 세법 6종·지방세법 4종과 하도급법·시행령, 최근 30일 판례 목록(공휴일 제외는 특일 정보 키 등록 시 적용)',
       requirements: ['Sites get_site에서 current_user_role이 owner 또는 editor인지 확인하고 현재 siwc_bypass_bearer_token을 메모리로만 취득한다. 공개 여부와 관계없이 업데이트 요청에는 별도 서명이 필요하다.', 'get_site의 Site id와 서비스 토큰으로 SHA256 UTF-8(legal-updates-v1\\n + project_id + \\n + token)을 계산한다. 여기서 \\n은 실제 줄바꿈이며 결과 hex를 32바이트 키로 복호화한다. 키를 파일·프롬프트·로그에 저장하지 않는다.', '현재 Unix 초를 timestamp로 하고 전송할 본문은 정확히 {} UTF-8 2바이트로 한다. canonical = POST\\n/api/updates/laws/run\\n<timestamp>\\n<본문 SHA256 hex> 로 구성하고 줄바꿈은 실제 LF를 사용한다.', 'HMAC-SHA256(파생 키 bytes, canonical UTF-8)의 hex를 X-Law-Update-Signature, timestamp를 X-Law-Update-Timestamp 헤더로 넣어 POST한다. 원본 서비스 토큰은 같은 Site의 OAI-Sites-Authorization 헤더로만 전달한다.', '401이면 서명 또는 서버 연결 설정이 맞지 않는 상태이다. 인증을 우회하거나 임의 키로 재설정하지 않고 중지한다. /api/updates/status로 저장 결과를 확인한다.', 'OC 미등록 blocked는 연동 대기이며 성공으로 보고하지 않는다. 새 자료는 검토 대기로 유지하고 기존 자료·확인일을 보존한다. 반복 일정에서는 재배포하지 않는다.'],
       signing: { context: 'legal-updates-v1', keyDerivation: 'SHA256(context + LF + project_id + LF + service_token)', canonical: 'POST + LF + /api/updates/laws/run + LF + unix_seconds + LF + SHA256(body_utf8).hex', headers: ['X-Law-Update-Timestamp','X-Law-Update-Signature'], maxAgeSeconds: 300 },
       writer: '/api/updates/laws/run', status: '/api/updates/status', timezone: 'Asia/Seoul', schedule: '월~금 09:00',
@@ -170,13 +212,20 @@ export async function handleRequest(request, env, ctx, SEED, ASSETS) {
     const updateResponse = await handleLawUpdate(request,env,ctx,{
       requireAdmin: async req => (await authState(req,env)).authenticated,
       requireScheduler: async req => verifySchedulerRequest(req,env),
-      importCase: async input => mutate(env, SEED, state => {
+      importCases: async inputs => mutate(env, SEED, state => importCases(state, inputs)),
+      importLaw: async input => mutate(env, SEED, state => {
         const doc = sanitizeDocument({ ...input, reviewStatus: 'published' }); doc.id = input.id;
-        const duplicate = state.documents.find(item=>item.id===doc.id || (item.type==='case' && item.documentNumber===doc.documentNumber && item.agency===doc.agency && item.documentDate===doc.documentDate));
-        if (duplicate) return { imported: false, duplicateId: duplicate.id, message: '같은 법원·사건번호·선고일의 자료가 이미 있습니다. 기존 자료를 확인하세요.' };
-        state.documents.push(doc); history(state, 'case-import', { documentId: doc.id, title: doc.title, reviewStatus: doc.reviewStatus });
-        return { imported: true, documentId: doc.id, message: '검토한 판례를 공개 자료에 등록했습니다.' };
+        const duplicate = state.documents.find(item => item.id === doc.id || (item.type === doc.type && (item.lawKey || item.lawName) === doc.lawKey && item.effectiveFrom === doc.effectiveFrom && item.promulgatedAt === doc.promulgatedAt && item.bodyStatus === 'full' && !item.article));
+        if (duplicate) return { imported: false, duplicateId: duplicate.id, message: '같은 법령·시행일·공포일의 전문이 이미 있습니다.' };
+        state.documents.push(doc); history(state, 'law-import', { documentId: doc.id, title: doc.title, reviewStatus: doc.reviewStatus });
+        return { imported: true, documentId: doc.id, message: `${doc.lawKey} 시행 ${doc.effectiveFrom} 전문을 공개했습니다.` };
       }),
+      publishedCaseIndex: async () => {
+        const state = await readState(env, SEED, { cached: true }), index = new Map();
+        for (const doc of state.documents) if (doc.type === 'case') { const entry = { id: doc.id, hasBody: hasBody(doc) }; index.set(`${doc.agency}|${doc.documentNumber}|${doc.documentDate}`, entry); index.set(doc.id, entry); }
+        return index;
+      },
+      publishedLawVersions: async () => new Set((await readState(env, SEED, { cached: true })).documents.filter(doc => ['law', 'decree', 'rule'].includes(doc.type) && doc.bodyStatus === 'full' && !doc.article).map(doc => `${doc.lawKey || doc.lawName}|${doc.effectiveFrom}|${doc.promulgatedAt}`)),
     });
     if (updateResponse) return updateResponse;
     if (method === 'GET' && path === '/api/admin/session') return reply(await authState(request, env));
@@ -197,7 +246,9 @@ export async function handleRequest(request, env, ctx, SEED, ASSETS) {
     if (path.startsWith('/api/admin/')) {
       if (changing && !env.BUCKET) throw error(503, '자료 저장소가 미설정입니다. R2 BUCKET 연결이 필요합니다.');
       if (!(await authState(request, env)).authenticated) throw error(401, '관리자 로그인이 필요합니다.');
-      if (method === 'GET' && path === '/api/admin/documents') { const state = await readState(env, SEED); return reply({ documents: state.documents.map(scrubDocument) }); }
+      // Bulk-collected cases are reviewed and removed from the case queue panel; listing
+      // thousands of judgment bodies here would make the admin screen unusable.
+      if (method === 'GET' && path === '/api/admin/documents') { const state = await readState(env, SEED); return reply({ documents: state.documents.filter(doc => doc.collection !== 'case-api').map(scrubDocument), collectedCases: state.documents.filter(doc => doc.collection === 'case-api').length }); }
       if (method === 'GET' && path === '/api/admin/history') { const state = await readState(env, SEED); return reply({ history: state.history.slice(0, 200) }); }
       if (method === 'POST' && (path === '/api/admin/documents' || path === '/api/admin/upload')) {
         const payload = await jsonBody(request); let input = payload;
@@ -242,22 +293,23 @@ export async function handleRequest(request, env, ctx, SEED, ASSETS) {
     }
     if (method === 'GET' && (path === '/api/search' || path === '/api/evidence')) {
       const params = Object.fromEntries(url.searchParams); const errors = validateSearch(params); if (errors.length) throw error(400, errors.join(' '));
-      const state = await readState(env, SEED); const result = searchDocuments(state.documents.map(scrubDocument), params);
+      const state = await readState(env, SEED, { cached: true }), documents = publicDocuments(state); const result = searchDocuments(documents, params);
       if (path === '/api/evidence') {
-        const eligible = result.documents.filter(doc => ['full', 'excerpt'].includes(doc.bodyStatus)).map(summary => { const full = scrubDocument(state.documents.find(doc => doc.id === summary.id)); return { ...summary, body: full.body, sections: sections(full.body) }; });
+        const eligible = result.documents.filter(doc => ['full', 'excerpt'].includes(doc.bodyStatus)).map(summary => { const full = documents.find(doc => doc.id === summary.id); return { ...summary, body: full.body, sections: sections(full.body) }; });
         return reply({ documents: eligible, total: eligible.length, excluded: result.documents.length - eligible.length, conditions: result.conditions, warnings: result.warnings, mode: 'evidence', aiEnabled: false, notice: '확보한 공식 본문만 근거 후보로 제공합니다. 생성형 답변 기능은 연결되지 않았습니다.' });
       }
       return reply(result);
     }
     if (method === 'POST' && path === '/api/ai') return reply({ error: 'AI 미연동입니다. 유료 서비스 연결 없이 근거 검색을 이용할 수 있습니다.', aiEnabled: false }, 503);
     if (method === 'GET' && path === '/api/status') {
-      const state = await readState(env, SEED); const docs = state.documents.filter(doc => doc.reviewStatus === 'published'); const checked = [...docs.map(doc => doc.verifiedAt), ...state.sources.map(source => source.lastChecked)].filter(Boolean).sort();
-      const guideSource = state.sources.find(item=>item.id==='nts-filing-guides');
+      const state = await readState(env, SEED, { cached: true }), sources = structuredClone(state.sources); const docs = state.documents.filter(doc => doc.reviewStatus === 'published'); const checked = [...docs.map(doc => doc.verifiedAt), ...sources.map(source => source.lastChecked)].filter(Boolean).sort();
+      const guideSource = sources.find(item=>item.id==='nts-filing-guides');
       if (typeof guideSource?.scope==='string') guideSource.scope = guideSource.scope.replace(/공식 링크 \d+건/, `공식 링크 ${docs.filter(d=>['guide','form','guideline'].includes(d.type)&&d.agency==='국세청').length}건`);
       const caseObject = await env.BUCKET?.get('updates-nts-cases-state-v1.json');
       const caseRun = caseObject ? await caseObject.json() : null;
       if (caseRun) {
-        const source = state.sources.find(item=>item.id==='nts-cases-law-api');
+        const runSource = caseRun.track && caseRun.track !== 'nts' ? 'court-cases-law-api' : 'nts-cases-law-api';
+        const source = sources.find(item=>item.id===runSource);
         if (source) {
           source.status = caseRun.state==='review-pending' ? 'connected' : caseRun.state==='failed' ? 'failed' : 'unconnected';
           source.lastChecked = caseRun.checkedAt;
@@ -265,11 +317,14 @@ export async function handleRequest(request, env, ctx, SEED, ASSETS) {
           source.integrationNote = caseRun.state==='review-pending' ? `공식 API 목록 ${caseRun.fetched}건 확인 · 전체 ${caseRun.totalAvailable}건 중 ${caseRun.page}페이지 · 공개 ${docs.filter(d=>d.sourceId===source.id).length}건. 본문 확보 범위는 자료별 표시. 검토 대기 수는 관리자 화면에서 확인하세요.` : (caseRun.reason || '수집 대기');
         }
       }
-      return reply({ sources: state.sources, counts: { documents: docs.length, fullText: docs.filter(doc => ['full', 'excerpt'].includes(doc.bodyStatus) && doc.body).length, links: docs.filter(doc => !['full', 'excerpt'].includes(doc.bodyStatus) || !doc.body).length, tax: docs.filter(doc => doc.domain === 'tax').length, subcontract: docs.filter(doc => doc.domain === 'subcontract').length }, lastChecked: checked.at(-1) || null, aiEnabled: false, adminConfigured: Boolean(env.ADMIN_TOKEN || env.ADMIN_USER_ID || env.ADMIN_EMAIL), storageConfigured: Boolean(env.BUCKET), libraryMode: 'local', coverage: '검토 후 공개한 자료만 검색합니다. 공식 사이트 전체 수집 또는 최신성 보장은 지원하지 않습니다. 지방세는 현재 미수집입니다.' });
+      const localLaws = docs.filter(doc => ['law', 'decree', 'rule'].includes(doc.type) && (doc.tags || []).includes('지방세')), localFull = new Set(localLaws.filter(hasBody).map(doc => doc.lawKey || doc.lawName));
+      const localSource = sources.find(item => item.id === 'local-tax');
+      if (localSource && localFull.size) { localSource.status = 'connected'; localSource.integrationNote = `지방세 법령 ${localFull.size}종 전문 수록(법제처 API 수집 후 검토·공개). 지방세 해석·결정례는 미수집.`; }
+      return reply({ sources, counts: { documents: docs.length, fullText: docs.filter(hasBody).length, links: docs.filter(doc => !hasBody(doc)).length, tax: docs.filter(doc => doc.domain === 'tax').length, subcontract: docs.filter(doc => doc.domain === 'subcontract').length, cases: docs.filter(doc => doc.type === 'case').length, collectedCases: docs.filter(doc => doc.collection === 'case-api').length, localTax: localLaws.length }, lastChecked: checked.at(-1) || null, aiEnabled: false, adminConfigured: Boolean(env.ADMIN_TOKEN || env.ADMIN_USER_ID || env.ADMIN_EMAIL), storageConfigured: Boolean(env.BUCKET), libraryMode: 'local', coverage: `검토 후 공개한 자료만 검색합니다. 공식 사이트 전체 수집 또는 최신성 보장은 지원하지 않습니다. ${localFull.size ? `지방세 법령 ${localFull.size}종은 전문, 지방세 해석·결정례는 미수집입니다.` : '지방세는 법령 공식 원문 링크만 수록했습니다.'}` });
     }
     const documentPath = path.match(/^\/api\/documents\/([^/]+)(\/download)?$/);
     if (method === 'GET' && documentPath) {
-      const state = await readState(env, SEED); const original = state.documents.find(doc => doc.id === documentPath[1]); if (!original || original.reviewStatus !== 'published') throw error(404, '공개된 자료를 찾을 수 없습니다.');
+      const state = await readState(env, SEED, { cached: true }); const original = state.documents.find(doc => doc.id === documentPath[1]); if (!original || original.reviewStatus !== 'published') throw error(404, '공개된 자료를 찾을 수 없습니다.');
       const doc = scrubDocument(original);
       if (documentPath[2]) {
         if (!doc.allowedDownload || !['full', 'excerpt'].includes(doc.bodyStatus) || !doc.rights) throw error(403, '이 자료의 본문 다운로드 권한은 확인되지 않았습니다. 공식 원문을 이용하세요.');

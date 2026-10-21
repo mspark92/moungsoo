@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const search=(await readFile(resolve(root,'lib/search.mjs'),'utf8')).replaceAll('export function','function');
 const runtime=(await readFile(resolve(root,'worker/runtime.mjs'),'utf8')).replace(/^import .*?;\s*$/gm,'').replace('export async function handleRequest','async function handleRequest');
-const updateSource=(await readFile(resolve(root,'worker/law-updates.mjs'),'utf8')).replaceAll('export const','const').replace('export async function handleLawUpdate','async function handleLawUpdate');
+const updateSource=(await readFile(resolve(root,"worker/law-updates.mjs"),"utf8")).replace(/^export (?=const |function |async function )/gm,"");
 const updater='const handleLawUpdate=(()=>{'+updateSource+';return handleLawUpdate;})();';
 const schedulerSource=(await readFile(resolve(root,'worker/scheduler-auth.mjs'),'utf8')).replace('export async function verifySchedulerRequest','async function verifySchedulerRequest');
 const scheduler='const verifySchedulerRequest=(()=>{'+schedulerSource+';return verifySchedulerRequest;})();';

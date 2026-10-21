@@ -23,7 +23,7 @@ const bucket={
  delete(key){return exclusive(async()=>{try{await unlink(objectPath(key));}catch(error){if(error.code!=='ENOENT')throw error;}});},
 };
 // Local HTTP has no trusted Sites gateway. Never trust supplied identity headers.
-const env={BUCKET:bucket,ADMIN_TOKEN:token,...(process.env.LAW_API_OC?{LAW_API_OC:process.env.LAW_API_OC}:{}),...(process.env.LAW_UPDATE_SIGNING_KEY?{LAW_UPDATE_SIGNING_KEY:process.env.LAW_UPDATE_SIGNING_KEY}:{})};
+const env={BUCKET:bucket,ADMIN_TOKEN:token,...(process.env.LAW_API_OC?{LAW_API_OC:process.env.LAW_API_OC}:{}),...(process.env.LAW_UPDATE_SIGNING_KEY?{LAW_UPDATE_SIGNING_KEY:process.env.LAW_UPDATE_SIGNING_KEY}:{}),...(process.env.HOLIDAY_API_KEY?{HOLIDAY_API_KEY:process.env.HOLIDAY_API_KEY}:{})};
 const server=createServer(async(incoming,outgoing)=>{
  try{
   if(incoming.headers.host!==`127.0.0.1:${listeningPort}`&&incoming.headers.host!==`localhost:${listeningPort}`){outgoing.writeHead(400);outgoing.end('Use the printed loopback URL.');return;}
