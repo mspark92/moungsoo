@@ -8,10 +8,12 @@ const updateSource=(await readFile(resolve(root,"worker/law-updates.mjs"),"utf8"
 const updater='const handleLawUpdate=(()=>{'+updateSource+';return handleLawUpdate;})();';
 const schedulerSource=(await readFile(resolve(root,'worker/scheduler-auth.mjs'),'utf8')).replace('export async function verifySchedulerRequest','async function verifySchedulerRequest');
 const scheduler='const verifySchedulerRequest=(()=>{'+schedulerSource+';return verifySchedulerRequest;})();';
+// Workers KV stands in for R2 when the host binds KV only (Cloudflare free plan).
+const kvSource=(await readFile(resolve(root,'worker/kv-bucket.mjs'),'utf8')).replace('export function kvBucket','function kvBucket');
 const seed=JSON.parse(await readFile(resolve(root,'data/seed.json'),'utf8'));
 const assets={};
 for(const name of ['index.html','app.js','styles.css','favicon.svg']) assets['/'+name]=await readFile(resolve(root,'public',name),'utf8');
-const worker='// Generated from tracked application source; no external dependencies.\n'+search+'\n'+updater+'\n'+scheduler+'\n'+runtime+'\nconst SEED='+JSON.stringify(seed)+';\nconst ASSETS='+JSON.stringify(assets)+';\nexport default {fetch(request,env,ctx){return handleRequest(request,env,ctx,SEED,ASSETS)}};\n';
+const worker='// Generated from tracked application source; no external dependencies.\n'+search+'\n'+updater+'\n'+scheduler+'\n'+runtime+'\n'+kvSource+'\nconst SEED='+JSON.stringify(seed)+';\nconst ASSETS='+JSON.stringify(assets)+';\nexport default {fetch(request,env,ctx){return handleRequest(request,env.BUCKET||!env.KV?env:{...env,BUCKET:kvBucket(env.KV)},ctx,SEED,ASSETS)}};\n';
 await mkdir(resolve(root,'dist/server'),{recursive:true});
 await mkdir(resolve(root,'dist/.openai'),{recursive:true});
 await mkdir(resolve(root,'worker'),{recursive:true});

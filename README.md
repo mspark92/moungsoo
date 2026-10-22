@@ -1,5 +1,7 @@
 # 기업 법무·세무 레퍼런스 — 웹앱
 
+> 2026-10-22부터 Cloudflare 무료 Workers에서도 운영합니다: https://moungsoo-reference.daily-safety.workers.dev · 배포 `npm run deploy:cloudflare` · 무료 요금제 한계와 측정 결과는 [docs/CLOUDFLARE-KO.md](./docs/CLOUDFLARE-KO.md)
+
 기존 Node/SQLite 실행본의 화면·공식 자료·검색 규칙을 보존하여 Sites의 서버리스 웹앱으로 옮긴 버전입니다.
 
 - 공식 확인 자료 72건(초기 시드): 세무 59, 하도급 13. 판례 24건(발췌 16건·링크 8건), 법령 발췌·안내서 포함. 조문·부칙 본문 8건·발췌 27건·제목/링크만 확보 37건(지방세 법령 4종 공식 원문 링크 포함).
