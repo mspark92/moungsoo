@@ -11,3 +11,4 @@ __pycache__/
 .local-data/
 exports/
 *.zip
+.wrangler/
