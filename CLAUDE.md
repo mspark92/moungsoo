@@ -9,6 +9,7 @@
 - `npm test`: 서버·검색·자료 범위·인증 등의 기존 검증.
 - `npm run build`: Sites Worker ESM 생성.
 - `npm run deploy:cloudflare`: 같은 번들을 Cloudflare 무료 Workers(`moungsoo-reference`, KV 저장소)에 배포. 운영 방식·무료 한계: `docs/CLOUDFLARE-KO.md`. R2가 없으면 `worker/kv-bucket.mjs`가 KV로 대신한다. Cloudflare에는 ADMIN_EMAIL·ADMIN_USER_ID를 설정하지 않는다(Sites 인증 헤더를 신뢰하지 않도록).
+- `scripts/server.mjs`: 일반 서버(오라클 클라우드 등)용 Node 실행 파일. 로컬 디렉터리 저장, `PUBLIC_HOSTS` 이외 Host 거부, 신원 헤더 무시. 설치·운영: `deploy/oracle/`, `docs/ORACLE-KO.md`. 평일 갱신은 systemd 타이머가 `scripts/scheduled-update.mjs`(HMAC 서명)로 실행한다.
 - `npm run collect:laws`: `.env`의 `LAW_API_OC`로 법령 32종 현재 본문을 로컬 파일(`exports/laws-*.json`, 별표 제외)에 수집. 관리자 화면 "법령 파일 올리기"로 검토 대기에 올린다.
 - `npm run collect:cases`: `.env`의 `LAW_API_OC`로 판례를 로컬 파일(`exports/`)에 수집. 공개하지 않으며 관리자 화면에서 검토 대기로 올린다.
 - `public/` 수정은 새로고침, `lib/`·`worker/` 수정은 개발 서버 재시작.

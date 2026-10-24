@@ -1,5 +1,7 @@
 # 운영자가 직접 해야 할 일 (순서대로)
 
+> **2026-10-25**: 오라클 클라우드 상시 무료 서버로 옮기기로 했습니다. 가입·서버 생성·포트 열기 절차는 [ORACLE-KO.md](./ORACLE-KO.md)를 보세요.
+
 > **2026-10-22 변경**: ChatGPT 유료 종료에 대비해 Cloudflare 무료 Workers로 옮겼습니다(https://moungsoo-reference.daily-safety.workers.dev). 아래 "ChatGPT(Sites)에 배포 요청" 단계는 이제 `npm run deploy:cloudflare`로 대신합니다. 관리자 토큰은 이 PC의 `.env.cloudflare`에 있습니다. 무료 요금제의 한계는 [CLOUDFLARE-KO.md](./CLOUDFLARE-KO.md)를 보세요.
 
 기준: 2026-10-21. 코드·테스트·문서는 준비되어 있습니다. 아래는 계정·키·배포처럼 **운영자 본인만 할 수 있는 일**입니다. 키 값은 채팅·GitHub·스크린샷에 올리지 마세요.
