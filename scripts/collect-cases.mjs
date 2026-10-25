@@ -51,7 +51,7 @@ for (const track of tracks) {
       }
     }
     for (const doc of result.documents) if (!seen.has(doc.id)) { seen.add(doc.id); state.documents.push(doc); }
-    Object.assign(progress, { page, totalPages: result.totalPages, totalAvailable: result.total, done: page >= result.totalPages || result.rowsRead === 0, warnings: progress.warnings + result.warnings.length });
+    Object.assign(progress, { page, totalPages: result.totalPages, totalAvailable: result.total, done: page >= result.totalPages || result.rowsRead === 0 || Boolean(result.windowEnded), warnings: progress.warnings + result.warnings.length });
     process.stdout.write(`\r[${CASE_TRACKS[track].label}] ${page}/${result.totalPages}페이지 · 누적 ${state.documents.length}건   `);
     if (page % 5 === 0 || progress.done) await save();
     await sleep(delay);
