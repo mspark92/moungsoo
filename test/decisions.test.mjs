@@ -39,7 +39,7 @@ test('조세심판원 rulings are collected with a date filter, capped body exce
   const [doc] = (await request('/api/admin/cases/pending?track=tribunal', env)).data.documents.filter(d => d.id === 'tt-api-101');
   assert.equal(doc.type, 'decision'); assert.equal(doc.agency, '조세심판원'); assert.equal(doc.documentNumber, '조심 2025서101'); assert.equal(doc.documentDate, '2026-01-26');
   assert.equal(doc.sourceUrl, 'https://www.law.go.kr/LSW/specialDeccInfoP.do?specialDeccSeq=101&mode=3&trbClsCd=360101');
-  assert.equal(doc.bodyStatus, 'excerpt'); assert.ok(doc.body.startsWith('【재결요지】\n격리된 시험 재결요지\n둘째 줄')); assert.ok(doc.body.length < 4100); assert.ok(doc.tags.includes('조세심판원 결정'));
+  assert.equal(doc.bodyStatus, 'excerpt'); assert.ok(doc.body.startsWith('【재결요지】\n격리된 시험 재결요지\n둘째 줄')); assert.doesNotMatch(doc.body, /【이유】/); assert.match(doc.body, /이유는 공식 원문에서 확인/); assert.ok(doc.tags.includes('조세심판원 결정'));
   assert.ok(!JSON.stringify(doc).includes(env.LAW_API_OC));
   // A row from another 재결청 fails the page instead of being stored.
   upstream(env, { ttSpecialDecc: { Decc: { totalCnt: '1', decc: [ttRow(103, { 재결청: '국민권익위원회' })] } } }, { ttSpecialDecc: id => ttDetail(id) });

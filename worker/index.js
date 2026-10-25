@@ -592,7 +592,7 @@ const looseDate = value => {
   return legalDate(digits) ? isoDate(digits) : '';
 };
 const DECISION_RIGHTS = {
-  tribunal: '법제처 국가법령정보 공동활용 특별행정심판재결례 API(재결청: 조세심판원) 제공. 행정심판 재결은 저작권법 제7조의 보호 대상이 아닌 저작물이나 출처 표시를 유지함. 재결요지·주문·관련법령과 이유 앞부분만 수록.',
+  tribunal: '법제처 국가법령정보 공동활용 특별행정심판재결례 API(재결청: 조세심판원) 제공. 행정심판 재결은 저작권법 제7조의 보호 대상이 아닌 저작물이나 출처 표시를 유지함. 재결요지·주문·관련법령만 수록하고 이유는 공식 원문에서 확인.',
   ftc: '법제처 국가법령정보 공동활용 공정거래위원회 결정문 API 제공. 심판·의결은 저작권법 제7조의 보호 대상이 아닌 저작물이나 출처 표시를 유지함. 결정요지·주문과 이유 앞부분만 수록.',
   'nts-interp': '법제처 국가법령정보 공동활용 국세청 법령해석 목록 API 제공 메타데이터(안건명·안건번호·해석일·링크). 본문은 국세법령정보시스템 원문에서 확인하며 앱에 수록하지 않음.',
 };
@@ -644,7 +644,10 @@ async function collectDecisionPage(env, oc, track, spec, { page, from, to, size,
         if (field(row, ['재결청']) !== '조세심판원') throw fail(502, '조세심판원 출처 검증에 실패했습니다.');
         const number = field(row, ['청구번호']).trim() || field(detail, ['청구번호']).trim();
         if (!number) { skipped++; warnings.push({ id, message: '청구번호가 없어 제외했습니다.' }); continue; }
-        const body = detail && compact(field(detail, ['특별행정심판재결례일련번호'])) === id ? sectionBody([['재결요지', detail.재결요지], ['주문', detail.주문], ['관련법령', detail.관련법령], ['이유', detail.이유]]) : null;
+        // 이유 is left on the official page: it is most of the text and would
+        // multiply the in-memory store (6,673 rulings: 70 MB with 이유, 17 MB without).
+        let body = detail && compact(field(detail, ['특별행정심판재결례일련번호'])) === id ? sectionBody([['재결요지', detail.재결요지], ['주문', detail.주문], ['관련법령', detail.관련법령]]) : null;
+        if (body && cleanHtmlText(detail.이유)) body = { body: body.body + '\n\n…(이유는 공식 원문에서 확인)', bodyStatus: 'excerpt' };
         if (!body) warnings.push({ id, message: '재결 본문을 확인하지 못해 제목·링크만 보관했습니다.' });
         const tax = field(detail, ['세목']).trim();
         const title = field(detail, ['사건명']).trim() || field(row, ['사건명']).trim() || `조세심판원 ${number} 결정${tax ? ` (${tax})` : ''}`;
