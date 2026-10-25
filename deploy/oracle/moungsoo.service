@@ -1,0 +1,21 @@
+[Unit]
+Description=기업 법무·세무 레퍼런스 (Node server)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=moungsoo
+Group=moungsoo
+WorkingDirectory=/opt/moungsoo
+EnvironmentFile=/etc/moungsoo/env
+ExecStart=/usr/bin/node scripts/server.mjs
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/moungsoo
+
+[Install]
+WantedBy=multi-user.target

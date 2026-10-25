@@ -1,0 +1,9 @@
+[Unit]
+Description=평일 09:00 (Asia/Seoul) 법령·판례 갱신
+
+[Timer]
+OnCalendar=Mon..Fri 09:00 Asia/Seoul
+Persistent=true
+
+[Install]
+WantedBy=timers.target

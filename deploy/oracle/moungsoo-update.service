@@ -1,0 +1,12 @@
+[Unit]
+Description=기업 법무·세무 레퍼런스 평일 갱신 (법령 16종 묶음 + 최근 30일 판례)
+After=moungsoo.service
+Requires=moungsoo.service
+
+[Service]
+Type=oneshot
+User=moungsoo
+Group=moungsoo
+WorkingDirectory=/opt/moungsoo
+EnvironmentFile=/etc/moungsoo/env
+ExecStart=/usr/bin/node scripts/scheduled-update.mjs

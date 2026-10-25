@@ -1,0 +1,12 @@
+# Cloudflare Workers (free plan) deployment of the same Worker bundle.
+# Build first: npm run build  ·  Deploy: npm run deploy:cloudflare
+# R2 is not used here (it needs a payment method); the store lives in Workers KV.
+# Secrets are set with `wrangler secret put` and are never written to this file.
+name = "moungsoo-reference"
+main = "../dist/server/index.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[[kv_namespaces]]
+binding = "KV"
+id = "b7a418dec42840b695dbf880e8b460d6"
