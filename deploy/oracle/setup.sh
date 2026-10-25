@@ -28,6 +28,13 @@ if ! command -v caddy >/dev/null; then
   sudo apt-get update -y && sudo apt-get install -y caddy
 fi
 
+# The free E2.1.Micro shape has 1 GB of memory; a 2 GB swap file keeps package
+# installs and the first full-text index build from running out of memory.
+if [ ! -f /swapfile ] && [ "$(awk '/MemTotal/ {print $2}' /proc/meminfo)" -lt 3000000 ]; then
+  sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
+  echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab >/dev/null
+fi
+
 echo "[2/7] 방화벽(서버 내부) 80·443 허용"
 # Oracle's Ubuntu images reject everything except SSH in iptables by default.
 for p in 80 443; do sudo iptables -C INPUT -p tcp --dport "$p" -j ACCEPT 2>/dev/null || sudo iptables -I INPUT 5 -p tcp -m state --state NEW --dport "$p" -j ACCEPT; done

@@ -20,7 +20,7 @@ Cloudflare Workers는 요청당 메모리 128MB(유료도 같음) 한도 때문�
 2. 이름은 `moungsoo`로 하고, 이미지는 **Canonical Ubuntu 24.04**(또는 22.04)를 고릅니다.
 3. Shape는 둘 중 하나를 고릅니다.
    - 권장: **VM.Standard.A1.Flex** (Ampere, "Always Free 사용 가능" 표시) · OCPU 1~2, 메모리 6~12GB
-   - "용량 부족(Out of capacity)"으로 안 만들어지면: **VM.Standard.E2.1.Micro** (메모리 1GB). 이 앱은 이것으로도 동작합니다.
+   - "용량 부족(Out of capacity)"으로 안 만들어지면: **Specialty and previous generation** 칸의 **VM.Standard.E2.1.Micro**("Always Free-eligible" 표시, 메모리 1GB). AMD 칸의 E5.Flex 등은 유료이니 고르지 마세요. 설치 스크립트가 2GB 스왑을 추가합니다.
 4. 네트워킹은 기본값(새 VCN, 공용 서브넷, **공용 IPv4 주소 할당**)으로 둡니다.
 5. SSH 키는 **키 쌍 생성 → 개인 키 저장**을 눌러 `.key` 파일을 받습니다. 이 파일은 서버 열쇠이니 잃어버리지 말고 다른 사람에게 보내지 마세요.
 6. **생성**을 누르고 상태가 "실행 중"이 되면 **공용 IP 주소**를 확인합니다.
