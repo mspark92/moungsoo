@@ -3,6 +3,7 @@ import { handleLawUpdate } from './law-updates.mjs';
 import { searchDocuments, validateSearch, validDate } from '../lib/search.mjs';
 
 const STATE_KEY = 'reference-state-v1.json';
+const GUIDE_LINKS_KEY = 'guide-links-check-v1.json';
 const MAX_BODY = 2 * 1024 * 1024;
 const TYPES = new Set(['law', 'decree', 'rule', 'case', 'guide', 'notice', 'interpretation', 'decision', 'ruling', 'form', 'guideline']);
 const DATE_FIELDS = ['promulgatedAt', 'effectiveFrom', 'effectiveTo', 'documentDate'];
@@ -232,6 +233,7 @@ export async function handleRequest(request, env, ctx, SEED, ASSETS) {
         for (const doc of state.documents) if (doc.type === 'case') { const entry = { id: doc.id, hasBody: hasBody(doc) }; index.set(`${doc.agency}|${doc.documentNumber}|${doc.documentDate}`, entry); index.set(doc.id, entry); }
         return index;
       },
+      guideDocuments: async () => (await readState(env, SEED, { cached: true })).documents.filter(doc => doc.reviewStatus === 'published' && ['guide', 'form', 'guideline'].includes(doc.type) && doc.agency === '국세청' && doc.sourceUrl).map(doc => ({ id: doc.id, title: doc.title, sourceUrl: doc.sourceUrl })),
       publishedLawVersions: async () => new Set((await readState(env, SEED, { cached: true })).documents.filter(doc => ['law', 'decree', 'rule'].includes(doc.type) && doc.bodyStatus === 'full' && !doc.article).map(doc => `${doc.lawKey || doc.lawName}|${doc.effectiveFrom}|${doc.promulgatedAt}`)),
     });
     if (updateResponse) return updateResponse;
@@ -312,17 +314,22 @@ export async function handleRequest(request, env, ctx, SEED, ASSETS) {
       const state = await readState(env, SEED, { cached: true }), sources = structuredClone(state.sources); const docs = state.documents.filter(doc => doc.reviewStatus === 'published'); const checked = [...docs.map(doc => doc.verifiedAt), ...sources.map(source => source.lastChecked)].filter(Boolean).sort();
       const guideSource = sources.find(item=>item.id==='nts-filing-guides');
       if (typeof guideSource?.scope==='string') guideSource.scope = guideSource.scope.replace(/공식 링크 \d+건/, `공식 링크 ${docs.filter(d=>['guide','form','guideline'].includes(d.type)&&d.agency==='국세청').length}건`);
-      const caseObject = await env.BUCKET?.get('updates-nts-cases-state-v1.json');
-      const caseRun = caseObject ? await caseObject.json() : null;
-      if (caseRun) {
-        const runSource = caseRun.track && caseRun.track !== 'nts' ? 'court-cases-law-api' : 'nts-cases-law-api';
-        const source = sources.find(item=>item.id===runSource);
-        if (source) {
-          source.status = caseRun.state==='review-pending' ? 'connected' : caseRun.state==='failed' ? 'failed' : 'unconnected';
-          source.lastChecked = caseRun.checkedAt;
-          source.lastError = caseRun.reason || null;
-          source.integrationNote = caseRun.state==='review-pending' ? `공식 API 목록 ${caseRun.fetched}건 확인 · 전체 ${caseRun.totalAvailable}건 중 ${caseRun.page}페이지 · 공개 ${docs.filter(d=>d.sourceId===source.id).length}건. 본문 확보 범위는 자료별 표시. 검토 대기 수는 관리자 화면에서 확인하세요.` : (caseRun.reason || '수집 대기');
-        }
+      // A source counts as connected when documents collected from it through the
+      // official API are published; the note says how many and how recent.
+      const collected = new Map();
+      for (const doc of docs) if (doc.collection === 'case-api' && doc.sourceId) { const entry = collected.get(doc.sourceId) || { count: 0, latest: '' }; entry.count++; if ((doc.documentDate || '') > entry.latest) entry.latest = doc.documentDate; collected.set(doc.sourceId, entry); }
+      const routeNotes = { 'nts-cases-law-api': '법제처 판례 API(데이터출처: 국세법령정보시스템)', 'court-cases-law-api': '법제처 판례 API(데이터출처: 대법원)', 'tax-tribunal': '법제처 특별행정심판재결례 API(조세심판원)', ftc: '법제처 공정거래위원회 결정문 API(하도급)', 'nts-taxlaw': '법제처 국세청 법령해석 API(목록·링크)' };
+      for (const [id, note] of Object.entries(routeNotes)) {
+        const source = sources.find(item => item.id === id), entry = collected.get(id);
+        if (source && entry) { source.status = 'connected'; source.integrationNote = `${note}로 수집 · 공개 ${entry.count.toLocaleString('ko-KR')}건 · 최근 문서일 ${entry.latest || '미확인'}. 새 자료는 평일 갱신 후 검토 대기에서 공개합니다.`; }
+      }
+      const courtEntry = collected.get('court-cases-law-api'), courts = sources.find(item => item.id === 'courts');
+      if (courts && courtEntry) { courts.status = 'connected'; courts.integrationNote = `법원 직접 오픈API는 아직 제공되지 않아 법제처 판례 API(데이터출처: 대법원)로 연동 · 공개 ${courtEntry.count.toLocaleString('ko-KR')}건 · 최근 선고일 ${courtEntry.latest || '미확인'}.`; }
+      const guideCheck = await (async () => { try { const item = await env.BUCKET?.get(GUIDE_LINKS_KEY); return item ? await item.json() : null; } catch { return null; } })();
+      const guides = sources.find(item => item.id === 'nts-filing-guides');
+      if (guides && guideCheck?.total) {
+        guides.status = guideCheck.failed?.length ? 'failed' : 'link-checked'; guides.lastChecked = guideCheck.checkedAt;
+        guides.integrationNote = `공식 링크 ${guideCheck.total}건 자동 확인 · 정상 ${guideCheck.ok}건${guideCheck.failed?.length ? ` · 열리지 않음 ${guideCheck.failed.length}건` : ''}. 국세청 공공누리 표시가 없어 본문은 이용 허락 전까지 수록하지 않습니다.`;
       }
       const localLaws = docs.filter(doc => ['law', 'decree', 'rule'].includes(doc.type) && (doc.tags || []).includes('지방세')), localFull = new Set(localLaws.filter(hasBody).map(doc => doc.lawKey || doc.lawName));
       const localSource = sources.find(item => item.id === 'local-tax');

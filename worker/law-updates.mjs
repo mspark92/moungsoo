@@ -30,6 +30,7 @@ const LAW_QUEUE_KEY = 'updates-laws-queue-v1.json';
 const CASE_STATE_KEY = 'updates-nts-cases-state-v1.json';
 const CASE_QUEUE_KEY = 'updates-nts-cases-queue-v1.json';
 const CASE_PROGRESS_KEY = 'updates-cases-progress-v1.json';
+export const GUIDE_CHECK_KEY = 'guide-links-check-v1.json';
 const HOLIDAY_KEY = year => `holidays-kr-${year}-v1.json`;
 const CASE_SOURCE = '국세법령정보시스템';
 const CASE_LIMIT = 20;
@@ -46,6 +47,9 @@ export const CASE_TRACKS = Object.freeze({
   nts: { label: '국세법령정보시스템 판례', datSrcNm: CASE_SOURCE, display: 100, detail: 'none' },
   court: { label: '대법원 출처 세법·지방세 판례', datSrcNm: '대법원', display: 50, detail: 'classified' },
   subcontract: { label: '하도급 관련 판례', datSrcNm: '대법원', display: 50, detail: 'all', search: '2', query: '하도급', domain: 'subcontract' },
+  tribunal: { label: '조세심판원 결정례', target: 'ttSpecialDecc', listRoot: 'Decc', listRows: 'decc', detailRoot: 'SpecialDeccService', idField: '특별행정심판재결례일련번호', dateField: '의결일자', dateParam: 'rslYd', display: 50, domain: 'tax', sourceId: 'tax-tribunal' },
+  ftc: { label: '공정위 하도급 의결서', target: 'ftc', listRoot: 'Ftc', listRows: 'ftc', detailRoot: 'FtcService', idField: '결정문일련번호', dateField: '결정일자', query: '하도급', display: 50, domain: 'subcontract', sourceId: 'ftc' },
+  'nts-interp': { label: '국세청 해석례', target: 'ntsCgmExpc', listRoot: 'CgmExpc', listRows: 'cgmExpc', idField: '법령해석일련번호', dateField: '해석일자', dateParam: 'explYd', display: 100, domain: 'tax', sourceId: 'nts-taxlaw' },
 });
 const LOCAL_TAX_TERMS = /지방세|취득세|재산세|등록면허세|지방소득세|주민세|자동차세|지방교육세|담배소비세|레저세|지역자원시설세/;
 const NATIONAL_TAX_TERMS = /법인세|부가가치세|소득세|증여세|상속세|원천징수|종합부동산세|개별소비세|교통[ㆍ·.\s]*에너지[ㆍ·.\s]*환경세|교육세|농어촌특별세|증권거래세|인지세|주세|관세|가산세|국세|조세|세무|경정청구|경정거부|과세처분|세액/;
@@ -263,6 +267,7 @@ function caseDocument(row, track, startedAt, detail) {
 export async function collectCasePage(env, oc, { track = 'nts', page = 1, from = '', to = '', display, startedAt = timestamp(), today = kstToday() } = {}) {
   const spec = CASE_TRACKS[track]; if (!spec) throw fail(400, '지원하는 판례 수집 범위를 선택하세요.');
   const size = display || spec.display;
+  if (spec.target) return collectDecisionPage(env, oc, track, spec, { page, from, to, size, startedAt, today });
   const search = new URL('https://www.law.go.kr/DRF/lawSearch.do');
   const params = { OC: oc, target: 'prec', type: 'JSON', datSrcNm: spec.datSrcNm, display: String(size), page: String(page), sort: 'ddes' };
   if (spec.query) Object.assign(params, { query: spec.query, search: spec.search || '1' });
@@ -289,6 +294,102 @@ export async function collectCasePage(env, oc, { track = 'nts', page = 1, from =
     documents.push(caseDocument(row, track, startedAt, detail));
   }
   return { documents, warnings, skipped, total: listing.total, totalPages: Math.max(1, Math.ceil(listing.total / size)), rowsRead: listing.rows.length };
+}
+// ---------------------------------------------------------------------------
+// Tribunal rulings, FTC decisions and NTS interpretations: other official
+// targets of the same 법제처 service. Bodies are capped excerpts (요지·주문 first).
+const DECISION_BODY_LIMIT = 4000;
+const looseDate = value => {
+  const text = String(value || '').trim(), match = text.match(/^(\d{4})\D+(\d{1,2})\D+(\d{1,2})/) || text.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (!match) return '';
+  const digits = `${match[1]}${match[2].padStart(2, '0')}${match[3].padStart(2, '0')}`;
+  return legalDate(digits) ? isoDate(digits) : '';
+};
+const DECISION_RIGHTS = {
+  tribunal: '법제처 국가법령정보 공동활용 특별행정심판재결례 API(재결청: 조세심판원) 제공. 행정심판 재결은 저작권법 제7조의 보호 대상이 아닌 저작물이나 출처 표시를 유지함. 재결요지·주문·관련법령과 이유 앞부분만 수록.',
+  ftc: '법제처 국가법령정보 공동활용 공정거래위원회 결정문 API 제공. 심판·의결은 저작권법 제7조의 보호 대상이 아닌 저작물이나 출처 표시를 유지함. 결정요지·주문과 이유 앞부분만 수록.',
+  'nts-interp': '법제처 국가법령정보 공동활용 국세청 법령해석 목록 API 제공 메타데이터(안건명·안건번호·해석일·링크). 본문은 국세법령정보시스템 원문에서 확인하며 앱에 수록하지 않음.',
+};
+export const DECISION_URL = {
+  tribunal: id => `https://www.law.go.kr/LSW/specialDeccInfoP.do?specialDeccSeq=${id}&mode=3&trbClsCd=360101`,
+  ftc: id => `https://www.law.go.kr/LSW/ftcInfoP.do?ftcSeq=${id}&mode=6`,
+};
+const officialNtsLink = value => { try { const url = new URL(value); return url.protocol === 'https:' && url.hostname === 'taxlaw.nts.go.kr' && !url.username && !url.password ? url.href : ''; } catch { return ''; } };
+function sectionBody(parts) {
+  const cleaned = parts.map(([label, value]) => [label, cleanHtmlText(value)]).filter(([, value]) => value);
+  if (!cleaned.length) return null;
+  const body = cleaned.map(([label, value]) => `【${label}】\n${value}`).join('\n\n');
+  return body.length <= DECISION_BODY_LIMIT ? { body, bodyStatus: 'full' } : { body: body.slice(0, DECISION_BODY_LIMIT).replace(/\s+\S*$/, '') + '\n…(이하 생략 · 공식 원문에서 전체 확인)', bodyStatus: 'excerpt' };
+}
+async function decisionDetail(env, oc, spec, id) {
+  const url = new URL('https://www.law.go.kr/DRF/lawService.do');
+  url.search = new URLSearchParams({ OC: oc, target: spec.target, type: 'JSON', ID: id });
+  return (await fetchJson(url, env))?.[spec.detailRoot] || null;
+}
+async function collectDecisionPage(env, oc, track, spec, { page, from, to, size, startedAt, today }) {
+  const search = new URL('https://www.law.go.kr/DRF/lawSearch.do');
+  const params = { OC: oc, target: spec.target, type: 'JSON', display: String(size), page: String(page), sort: 'ddes' };
+  if (spec.query) Object.assign(params, { query: spec.query, search: spec.search || '1' });
+  if (spec.dateParam && from && to) params[spec.dateParam] = `${from.replaceAll('-', '')}~${to.replaceAll('-', '')}`;
+  search.search = new URLSearchParams(params);
+  const root = (await fetchJson(search, env))?.[spec.listRoot];
+  if (!root || !/^\d+$/.test(String(root.totalCnt))) throw fail(502, `${spec.label} 목록 응답 형식 또는 API 승인 범위를 확인하세요.`);
+  const rows = listOf(root[spec.listRows]).slice(0, size), documents = [], warnings = [], seen = new Set();
+  let skipped = 0, windowEnded = false;
+  for (const row of rows) {
+    const id = field(row, [spec.idField]), date = looseDate(field(row, [spec.dateField]));
+    if (!/^\d{1,20}$/.test(id)) { skipped++; warnings.push({ id: null, message: '일련번호가 없어 제외했습니다.' }); continue; }
+    if (!date) { skipped++; warnings.push({ id, message: '문서일 형식이 올바르지 않아 제외했습니다.' }); continue; }
+    if (date > today) { skipped++; warnings.push({ id, message: `문서일(${date})이 오늘 이후로 표기되어 제외했습니다.` }); continue; }
+    // The FTC list has no date filter; it is newest first, so stop at the window start.
+    if (!spec.dateParam && from && date < from) { windowEnded = true; break; }
+    if (!spec.dateParam && to && date > to) continue;
+    if (seen.has(id)) continue; seen.add(id);
+    let doc;
+    if (track === 'nts-interp') {
+      if (field(row, ['해석기관명']) !== '국세청') throw fail(502, '국세청 해석례 출처 검증에 실패했습니다.');
+      const title = field(row, ['안건명']).trim(), number = field(row, ['안건번호']).trim(), link = officialNtsLink(field(row, ['법령해석상세링크']));
+      if (!title || !number || !link) { skipped++; warnings.push({ id, message: '안건명·안건번호·공식 링크가 없어 제외했습니다.' }); continue; }
+      doc = { id: `nts-interp-${id}`, title, type: 'interpretation', agency: '국세청', documentNumber: number, sourceUrl: link, body: '', bodyStatus: 'link', tags: ['국세청 해석례', '국세'], keywords: ['국세청', '해석례', number] };
+    } else {
+      let detail = null;
+      try { detail = await decisionDetail(env, oc, spec, id); } catch (cause) { warnings.push({ id, message: cause.status ? cause.message : '본문 확인 실패' }); }
+      if (track === 'tribunal') {
+        if (field(row, ['재결청']) !== '조세심판원') throw fail(502, '조세심판원 출처 검증에 실패했습니다.');
+        const number = field(row, ['청구번호']).trim() || field(detail, ['청구번호']).trim();
+        if (!number) { skipped++; warnings.push({ id, message: '청구번호가 없어 제외했습니다.' }); continue; }
+        const body = detail && compact(field(detail, ['특별행정심판재결례일련번호'])) === id ? sectionBody([['재결요지', detail.재결요지], ['주문', detail.주문], ['관련법령', detail.관련법령], ['이유', detail.이유]]) : null;
+        if (!body) warnings.push({ id, message: '재결 본문을 확인하지 못해 제목·링크만 보관했습니다.' });
+        const tax = field(detail, ['세목']).trim();
+        const title = field(detail, ['사건명']).trim() || field(row, ['사건명']).trim() || `조세심판원 ${number} 결정${tax ? ` (${tax})` : ''}`;
+        doc = { id: `tt-api-${id}`, title, type: 'decision', agency: '조세심판원', documentNumber: number, sourceUrl: DECISION_URL.tribunal(id), body: body?.body || '', bodyStatus: body?.bodyStatus || 'link', tags: ['조세심판원 결정', ...(tax ? [tax] : [])], keywords: ['조세심판원', '심판결정', number, compact(number)] };
+      } else {
+        const number = field(row, ['사건번호']).trim(), title = field(row, ['사건명']).trim();
+        if (!number || !title) { skipped++; warnings.push({ id, message: '사건번호·사건명이 없어 제외했습니다.' }); continue; }
+        const body = detail && compact(field(detail, ['결정문일련번호'])) === id ? sectionBody([['결정요지', detail.결정요지], ['주문', detail.주문], ['이유', detail.이유]]) : null;
+        if (!body) warnings.push({ id, message: '결정문 본문을 확인하지 못해 제목·링크만 보관했습니다.' });
+        doc = { id: `ftc-api-${id}`, title, type: 'decision', agency: '공정거래위원회', documentNumber: number, sourceUrl: DECISION_URL.ftc(id), body: body?.body || '', bodyStatus: body?.bodyStatus || 'link', tags: ['공정위 의결', '하도급', field(row, ['문서유형'])].filter(Boolean), keywords: ['공정거래위원회', number, field(row, ['결정번호']).replace(/\s+/g, '')].filter(Boolean) };
+      }
+    }
+    documents.push({ ...doc, domain: spec.domain, sourceId: spec.sourceId, collection: 'case-api', caseTrack: track, documentDate: date, version: `${date} · 법제처 ${spec.label} ID ${id}`, verifiedAt: startedAt, collectedAt: startedAt, reviewStatus: 'draft', allowedDownload: false, rights: DECISION_RIGHTS[track], notes: doc.body ? `법제처 API가 제공한 ${spec.label} 본문 중 요지·주문 등 앞부분입니다. 앱에서 요약하거나 결론을 덧붙이지 않았습니다. 전체 내용은 공식 원문에서 확인하세요.` : '공식 API 목록의 제목·번호·날짜·출처만 확보했습니다. 앱에 없는 본문을 요약하거나 AI 근거로 사용하지 않습니다.' });
+  }
+  return { documents, warnings, skipped, total: Number(root.totalCnt), totalPages: Math.max(1, Math.ceil(Number(root.totalCnt) / size)), rowsRead: rows.length, windowEnded };
+}
+const rightsFor = doc => doc.caseTrack === 'nts' ? CASE_RIGHTS.nts : ['court', 'subcontract'].includes(doc.caseTrack) ? CASE_RIGHTS.court : DECISION_RIGHTS[doc.caseTrack];
+const STAGE_PREFIX = { nts: 'nts-api-case', court: 'court-api-case', subcontract: 'court-api-case', tribunal: 'tt-api', ftc: 'ftc-api', 'nts-interp': 'nts-interp' };
+const STAGE_TYPE = { tribunal: 'decision', ftc: 'decision', 'nts-interp': 'interpretation' };
+// Guide links have no API and no reuse permission; their availability is checked.
+export async function checkGuideLinks(env, documents) {
+  const failed = [];
+  for (const doc of documents) {
+    const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 10000);
+    try { const res = await (env.GUIDE_FETCH || fetch)(doc.sourceUrl, { signal: controller.signal, redirect: 'follow', headers: { 'User-Agent': 'LegalReference/1.0 (official link availability check; no crawling)' } }); if (!res.ok) failed.push({ id: doc.id, title: doc.title, status: res.status }); await res.body?.cancel?.(); }
+    catch { failed.push({ id: doc.id, title: doc.title, status: 'connection' }); }
+    finally { clearTimeout(timer); }
+  }
+  const result = { checkedAt: timestamp(), total: documents.length, ok: documents.length - failed.length, failed };
+  if (env.BUCKET) await write(env.BUCKET, GUIDE_CHECK_KEY, result);
+  return result;
 }
 function caseWindow(body) {
   const to = body.to ?? kstToday();
@@ -318,15 +419,16 @@ async function readQueuedDocument(env, entry, cache) {
 // Uploaded files (from scripts/collect-cases.mjs) are checked against the same
 // shape the collector produces; anything else is rejected, not repaired.
 function validStagedCase(doc) {
-  if (!doc || typeof doc !== 'object') return false;
-  const id = String(doc.id || '').match(/^(nts|court)-api-case-(\d{1,20})$/);
-  if (!id || doc.type !== 'case' || doc.collection !== 'case-api' || doc.reviewStatus !== 'draft') return false;
-  if (doc.sourceUrl !== `https://www.law.go.kr/LSW/precInfoP.do?precSeq=${id[2]}`) return false;
-  if (!['tax', 'subcontract'].includes(doc.domain) || !CASE_TRACKS[doc.caseTrack]) return false;
-  if ((id[1] === 'nts') !== (doc.caseTrack === 'nts')) return false;
+  if (!doc || typeof doc !== 'object' || doc.collection !== 'case-api' || doc.reviewStatus !== 'draft') return false;
+  const track = doc.caseTrack, spec = CASE_TRACKS[track];
+  const id = String(doc.id || '').match(/^(.+)-(\d{1,20})$/);
+  if (!spec || !id || id[1] !== STAGE_PREFIX[track] || doc.type !== (STAGE_TYPE[track] || 'case')) return false;
+  const expectedUrl = !spec.target ? `https://www.law.go.kr/LSW/precInfoP.do?precSeq=${id[2]}` : DECISION_URL[track] ? DECISION_URL[track](id[2]) : officialNtsLink(doc.sourceUrl);
+  if (!expectedUrl || doc.sourceUrl !== expectedUrl) return false;
+  if (!['tax', 'subcontract'].includes(doc.domain)) return false;
   if (typeof doc.title !== 'string' || !doc.title.trim() || doc.title.length > 500 || typeof doc.agency !== 'string' || !doc.agency.trim() || typeof doc.documentNumber !== 'string' || !doc.documentNumber) return false;
   if (!validIso(doc.documentDate) || doc.documentDate > kstToday()) return false;
-  if (doc.caseTrack === 'nts' ? (doc.body || doc.bodyStatus !== 'link') : !['full', 'excerpt', 'link'].includes(doc.bodyStatus)) return false;
+  if (['nts', 'nts-interp'].includes(track) ? (doc.body || doc.bodyStatus !== 'link') : !['full', 'excerpt', 'link'].includes(doc.bodyStatus)) return false;
   if (typeof (doc.body || '') !== 'string' || (doc.body || '').length > CASE_BODY_LIMIT + 100) return false;
   return true;
 }
@@ -439,7 +541,7 @@ async function runCaseCollection(env, oc, body, startedAt, helpers, prior, { rec
   const result = await collectCasePage(env, oc, { track, page: body.page ?? 1, ...window, display: legacy ? CASE_LIMIT : undefined, startedAt });
   const key = `updates/cases/pages/${track}/${window.from || 'all'}_${window.to || 'all'}/p${body.page ?? 1}-${startedAt.replace(/[:.]/g, '-')}.json`;
   const stage = await stageCaseDocuments(env, result.documents, key, startedAt, helpers);
-  const page = body.page ?? 1, done = page >= result.totalPages || result.rowsRead === 0;
+  const page = body.page ?? 1, done = page >= result.totalPages || result.rowsRead === 0 || Boolean(result.windowEnded);
   const lastRun = { state: 'review-pending', startedAt, checkedAt: timestamp(), track, trackLabel: CASE_TRACKS[track].label, window, page, totalPages: result.totalPages, totalAvailable: result.total, fetched: result.documents.length, staged: stage.staged, skippedExisting: stage.skippedExisting, skippedRows: result.skipped, reviewPending: stage.reviewPending, published: 0, excerpts: result.documents.filter(d => d.body).length, links: result.documents.filter(d => !d.body).length, warnings: result.warnings.slice(0, 30), warningCount: result.warnings.length, done, message: '공식 API 판례를 검토 대기로 저장했습니다. 판례 검토 목록에서 확인 후 공개하세요.' };
   await write(env.BUCKET, CASE_STATE_KEY, lastRun);
   if (!legacy && recordProgress) {
@@ -503,7 +605,7 @@ export async function handleLawUpdate(request, env, ctx, helpers = {}) {
         const body = await boundedJson(request, 1900000, '한 번에 올릴 수 있는 수집 파일 조각은 1.9MB까지입니다.');
         if (body.format !== 'law-api-cases-v1' || !Array.isArray(body.documents) || body.documents.length > 1000) throw fail(400, 'scripts/collect-cases.mjs로 만든 수집 파일 형식이 아닙니다.');
         const rejected = body.documents.filter(doc => !validStagedCase(doc)).length;
-        const documents = body.documents.filter(validStagedCase).map(doc => ({ ...doc, collectedAt: typeof doc.collectedAt === 'string' && !Number.isNaN(Date.parse(doc.collectedAt)) ? doc.collectedAt : timestamp(), verifiedAt: typeof doc.verifiedAt === 'string' && !Number.isNaN(Date.parse(doc.verifiedAt)) ? doc.verifiedAt : timestamp(), allowedDownload: false, rights: doc.caseTrack === 'nts' ? CASE_RIGHTS.nts : CASE_RIGHTS.court, reviewStatus: 'draft' }));
+        const documents = body.documents.filter(validStagedCase).map(doc => ({ ...doc, collectedAt: typeof doc.collectedAt === 'string' && !Number.isNaN(Date.parse(doc.collectedAt)) ? doc.collectedAt : timestamp(), verifiedAt: typeof doc.verifiedAt === 'string' && !Number.isNaN(Date.parse(doc.verifiedAt)) ? doc.verifiedAt : timestamp(), allowedDownload: false, rights: rightsFor(doc), reviewStatus: 'draft' }));
         const stage = documents.length ? await stageCaseDocuments(env, documents, `updates/cases/uploads/${crypto.randomUUID()}.json`, timestamp(), helpers) : { staged: 0, skippedExisting: 0, reviewPending: queue.length };
         return response({ ...stage, rejected, message: `${stage.staged}건을 검토 대기로 올렸습니다.${rejected ? ` 형식이 맞지 않는 ${rejected}건은 제외했습니다.` : ''}` });
       }
@@ -614,6 +716,7 @@ export async function handleLawUpdate(request, env, ctx, helpers = {}) {
           catch (cause) { cases.push({ track, error: cause.status ? cause.message : '판례 수집 실패' }); }
         }
         lastRun.recentCases = cases;
+        if (helpers.guideDocuments) { try { const check = await checkGuideLinks(env, await helpers.guideDocuments()); lastRun.guideLinks = { total: check.total, ok: check.ok }; } catch { lastRun.guideLinks = { error: '링크 확인 실패' }; } }
       }
       await write(env.BUCKET, STATE_KEY, lastRun);
       return response({ ok: result.errors.length === 0, ...lastRun });
