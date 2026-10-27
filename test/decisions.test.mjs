@@ -106,3 +106,15 @@ test('guide link checks record failures and the guide source shows the result', 
   guides = (await request('/api/status', env)).data.sources.find(s => s.id === 'nts-filing-guides');
   assert.equal(guides.status, 'link-checked'); assert.match(guides.integrationNote, /본문은 이용 허락 전까지 수록하지 않습니다/);
 });
+
+test('published decisions and interpretations are not staged again by later runs', async () => {
+  const env = environment();
+  const lists = { ttSpecialDecc: { Decc: { totalCnt: '1', decc: [ttRow(401)] } }, ntsCgmExpc: { CgmExpc: { totalCnt: '1', cgmExpc: [ntsRow(41)] } } };
+  upstream(env, lists, { ttSpecialDecc: id => ttDetail(id) });
+  await run(env, 'tribunal'); await run(env, 'nts-interp');
+  await request('/api/admin/cases/import-batch', env, 'POST', { all: true, reviewConfirmed: true });
+  upstream(env, lists, { ttSpecialDecc: id => ttDetail(id) });
+  assert.equal((await run(env, 'tribunal')).data.staged, 0);
+  assert.equal((await run(env, 'nts-interp')).data.staged, 0);
+  assert.equal((await request('/api/admin/cases/pending', env)).data.total, 0);
+});

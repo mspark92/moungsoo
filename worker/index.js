@@ -1308,7 +1308,9 @@ async function handleRequest(request, env, ctx, SEED, ASSETS) {
       }),
       publishedCaseIndex: async () => {
         const state = await readState(env, SEED, { cached: true }), index = new Map();
-        for (const doc of state.documents) if (doc.type === 'case') { const entry = { id: doc.id, hasBody: hasBody(doc) }; index.set(`${doc.agency}|${doc.documentNumber}|${doc.documentDate}`, entry); index.set(doc.id, entry); }
+        // Every collected record counts, not only court cases: 조세심판원 decisions and
+        // 국세청 interpretations would otherwise be re-staged on each daily run.
+        for (const doc of state.documents) if (doc.type === 'case' || doc.collection === 'case-api') { const entry = { id: doc.id, hasBody: hasBody(doc) }; index.set(`${doc.agency}|${doc.documentNumber}|${doc.documentDate}`, entry); index.set(doc.id, entry); }
         return index;
       },
       guideDocuments: async () => (await readState(env, SEED, { cached: true })).documents.filter(doc => doc.reviewStatus === 'published' && ['guide', 'form', 'guideline'].includes(doc.type) && doc.agency === '국세청' && doc.sourceUrl).map(doc => ({ id: doc.id, title: doc.title, sourceUrl: doc.sourceUrl })),
